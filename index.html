@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Zoncik — Find Local Businesses</title>
+<title>ZonՑik — Find Local Businesses</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;1,400;1,600&display=swap" rel="stylesheet"/>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -357,42 +357,6 @@ nav ul a:hover { color: var(--accent); }
 .card[data-category="fashion"] .card-link { background: #f4f0ff; color: #6040b0; }
 .card[data-category="fashion"] .card-link:hover { background: #6040b0; color: #fff; box-shadow: 0 4px 14px #6040b030; }
 
-/* ── MODAL ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(28,24,48,0.5); backdrop-filter: blur(6px);
-  justify-content: center; align-items: center; padding: 1.5rem;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface); border-radius: 1.5rem; padding: 2.5rem;
-  max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;
-  box-shadow: 0 24px 80px rgba(28,24,48,0.25);
-}
-.modal h2 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-.modal p { color: var(--ink-mid); font-size: 0.9rem; margin-bottom: 1.5rem; }
-.modal label { display: block; font-weight: 600; font-size: 0.82rem; color: var(--ink-mid); margin-bottom: 0.35rem; margin-top: 1rem; }
-.modal input, .modal select, .modal textarea {
-  width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid var(--border);
-  border-radius: 0.7rem; font-family: inherit; font-size: 0.92rem;
-  background: var(--bg); transition: border 0.2s;
-}
-.modal input:focus, .modal select:focus, .modal textarea:focus {
-  outline: none; border-color: var(--accent);
-}
-.modal textarea { resize: vertical; min-height: 80px; }
-.modal-actions { display: flex; gap: 0.75rem; margin-top: 1.75rem; }
-.modal-actions button {
-  flex: 1; padding: 0.75rem; border: none; border-radius: 0.7rem;
-  font-family: inherit; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: 0.2s;
-}
-.btn-submit { background: var(--accent); color: #fff; }
-.btn-submit:hover { background: #6b5de0; }
-.btn-cancel { background: var(--bg); color: var(--ink-mid); border: 1.5px solid var(--border) !important; }
-.btn-cancel:hover { background: var(--border); }
-.modal .success-msg { background: #e8f8ee; color: #207848; padding: 0.75rem 1rem; border-radius: 0.7rem; font-weight: 600; margin-top: 1rem; display: none; }
-.modal .error-msg { background: #fde8e8; color: #b02020; padding: 0.75rem 1rem; border-radius: 0.7rem; font-weight: 600; margin-top: 1rem; display: none; }
-
 /* ── CTA ── */
 .cta-wrap { width: 100%; margin: 0 auto 5rem; padding: 0 1.5rem; }
 .cta-banner {
@@ -721,8 +685,7 @@ nav ul a:hover { color: var(--accent); }
 <!-- NAV -->
 <nav>
   <div class="logo">
-    Zoncik
-    <svg class="logo-umbrella" viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+    Zon<span style="color:#ff3dac">Ց</span>ik<svg class="logo-umbrella" viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg">
       <!-- Left panel: Pink -->
       <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22Z" fill="#ff3dac"/>
       <!-- Middle panel: Lila -->
@@ -763,14 +726,14 @@ nav ul a:hover { color: var(--accent); }
       </div>
     </li>
     <li><a href="#about">About</a></li>
-    <li><a href="#" class="nav-cta" onclick="openListModal();return false;">List Your Business</a></li>
+    <li><a href="#" class="nav-cta">List Your Business</a></li>
   </ul>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
   <h1>Discover <em>local</em> businesses you'll <span class="wavy">love</span></h1>
-  <p>Zoncik brings small and medium businesses to the spotlight — from food &amp; crafts to tech &amp; wellness. Browse freely, find your favourites.</p>
+  <p>ZonՑik brings small and medium businesses to the spotlight — from food &amp; crafts to tech &amp; wellness. Browse freely, find your favourites.</p>
 </section>
 
 
@@ -834,7 +797,106 @@ nav ul a:hover { color: var(--accent); }
       <span class="section-count" id="countLabel">Showing 9 businesses</span>
     </div>
     <div class="grid" id="cardGrid">
-      <!-- Cards loaded dynamically from API -->
+
+    <div class="card" data-category="food" data-name="The Spice Route" data-tags="spices organic grocery">
+      <div class="card-banner"><div class="card-emoji">🫙</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Food & Retail</div>
+        <div class="card-name">The Spice Route</div>
+        <div class="card-desc">Premium artisan spices and organic pantry essentials sourced directly from small farms around the world.</div>
+        <div class="card-tags"><span class="tag">Organic</span><span class="tag">Artisan</span><span class="tag">Grocery</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="tech" data-name="Pixelsmith Studio" data-tags="design branding digital">
+      <div class="card-banner"><div class="card-emoji">🖥️</div></div>
+      <div class="card-body">
+        <div class="card-category">Tech & Services</div>
+        <div class="card-name">Pixelsmith Studio</div>
+        <div class="card-desc">A boutique digital design studio specialising in brand identity, UI/UX, and motion graphics for growing businesses.</div>
+        <div class="card-tags"><span class="tag">Branding</span><span class="tag">UI/UX</span><span class="tag">Motion</span></div>
+        <div class="card-footer"><span class="card-location">📍 Berlin, DE</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="craft" data-name="Atelier Loom" data-tags="handmade textile weaving home">
+      <div class="card-banner"><div class="card-emoji">🪡</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Crafts & Local</div>
+        <div class="card-name">Atelier Loom</div>
+        <div class="card-desc">Handwoven textiles and home décor made using traditional techniques passed down through three generations of weavers.</div>
+        <div class="card-tags"><span class="tag">Handmade</span><span class="tag">Textile</span><span class="tag">Home Décor</span></div>
+        <div class="card-footer"><span class="card-location">📍 Graz, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="health" data-name="Verdure Wellness" data-tags="wellness herbal supplements health">
+      <div class="card-banner"><div class="card-emoji">🧴</div></div>
+      <div class="card-body">
+        <div class="card-category">Health & Wellness</div>
+        <div class="card-name">Verdure Wellness</div>
+        <div class="card-desc">Natural herbal supplements and wellness products crafted with certified organic ingredients for everyday vitality.</div>
+        <div class="card-tags"><span class="tag">Herbal</span><span class="tag">Organic</span><span class="tag">Supplements</span></div>
+        <div class="card-footer"><span class="card-location">📍 Salzburg, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="fashion" data-name="Fold & Form" data-tags="fashion sustainable clothing">
+      <div class="card-banner"><div class="card-emoji">🧣</div></div>
+      <div class="card-body">
+        <div class="card-category">Fashion</div>
+        <div class="card-name">Fold & Form</div>
+        <div class="card-desc">Slow fashion essentials made from sustainable fabrics. Timeless silhouettes designed to last seasons, not just trends.</div>
+        <div class="card-tags"><span class="tag">Sustainable</span><span class="tag">Slow Fashion</span><span class="tag">Clothing</span></div>
+        <div class="card-footer"><span class="card-location">📍 Linz, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="tech" data-name="Clarity Bookkeeping" data-tags="finance accounting bookkeeping">
+      <div class="card-banner"><div class="card-emoji">🗂️</div></div>
+      <div class="card-body">
+        <div class="card-category">Tech & Services</div>
+        <div class="card-name">Clarity Bookkeeping</div>
+        <div class="card-desc">Friendly, cloud-based bookkeeping and financial consulting for small businesses who want clarity without complexity.</div>
+        <div class="card-tags"><span class="tag">Finance</span><span class="tag">Accounting</span><span class="tag">Cloud</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="food" data-name="Morning Roast Co." data-tags="coffee roastery specialty">
+      <div class="card-banner"><div class="card-emoji">🫖</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Food & Retail</div>
+        <div class="card-name">Morning Roast Co.</div>
+        <div class="card-desc">Specialty single-origin coffee roasted in small batches. Sourced ethically, roasted locally, delivered fresh to your door.</div>
+        <div class="card-tags"><span class="tag">Coffee</span><span class="tag">Specialty</span><span class="tag">Ethical</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="craft" data-name="Woodcraft & Co." data-tags="woodworking furniture handmade">
+      <div class="card-banner"><div class="card-emoji">🪑</div></div>
+      <div class="card-body">
+        <div class="card-category">Crafts & Local</div>
+        <div class="card-name">Woodcraft & Co.</div>
+        <div class="card-desc">Custom-made wooden furniture and home objects. Each piece is unique, hand-finished, and built to become a family heirloom.</div>
+        <div class="card-tags"><span class="tag">Furniture</span><span class="tag">Handmade</span><span class="tag">Custom</span></div>
+        <div class="card-footer"><span class="card-location">📍 Innsbruck, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="health" data-name="MindSpace Studio" data-tags="yoga meditation wellness mindfulness">
+      <div class="card-banner"><div class="card-emoji">🫧</div></div>
+      <div class="card-body">
+        <div class="card-category">Health & Wellness</div>
+        <div class="card-name">MindSpace Studio</div>
+        <div class="card-desc">Online and in-person yoga, breathwork, and meditation classes for individuals and corporate teams seeking balance.</div>
+        <div class="card-tags"><span class="tag">Yoga</span><span class="tag">Meditation</span><span class="tag">Corporate</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
     </div>
   </section>
 
@@ -845,9 +907,9 @@ nav ul a:hover { color: var(--accent); }
   <div class="about-inner">
 
     <div class="about-left">
-      <div class="about-pill"><span class="about-pill-dot"></span> About Zoncik</div>
+      <div class="about-pill"><span class="about-pill-dot"></span> About ZonՑik</div>
       <h2 class="about-title">We believe <em>local businesses</em> deserve the <span class="about-wavy">spotlight</span></h2>
-      <p class="about-lead">Zoncik was built with a simple idea: small and medium businesses are the backbone of every community, yet they're often the hardest to find online.</p>
+      <p class="about-lead">ZonՑik was built with a simple idea: small and medium businesses are the backbone of every community, yet they're often the hardest to find online.</p>
       <p class="about-body">We created a space where SMEs can be discovered without competing against giant ad budgets — and where people can find authentic, local alternatives to big-box brands. No algorithms. No paid placements. Just great businesses, listed fairly.</p>
       <div class="about-values">
         <div class="about-value">
@@ -905,8 +967,8 @@ nav ul a:hover { color: var(--accent); }
       </div>
       <div class="about-quote">
         <div class="aq-mark">"</div>
-        <p>Finding a great local business shouldn't feel like searching for a needle in a haystack. Zoncik makes it effortless.</p>
-        <div class="aq-author">— Zoncik founding team, Vienna</div>
+        <p>Finding a great local business shouldn't feel like searching for a needle in a haystack. ZonՑik makes it effortless.</p>
+        <div class="aq-author">— ZonՑik founding team, Vienna</div>
       </div>
     </div>
 
@@ -920,8 +982,8 @@ nav ul a:hover { color: var(--accent); }
     <div class="about-text">
       <div class="about-pill"><span class="about-pill-dot"></span> Our Story</div>
       <h2 class="about-title">We believe <em>small businesses</em> deserve a big spotlight</h2>
-      <p class="about-desc">Zoncik was born out of a simple frustration — great local businesses were invisible online, buried under big brands and paid ads. We set out to change that.</p>
-      <p class="about-desc">Today Zoncik is a free, community-driven directory where small and medium businesses can be discovered by the people who matter most: their neighbours, their city, their community.</p>
+      <p class="about-desc">ZonՑik was born out of a simple frustration — great local businesses were invisible online, buried under big brands and paid ads. We set out to change that.</p>
+      <p class="about-desc">Today ZonՑik is a free, community-driven directory where small and medium businesses can be discovered by the people who matter most: their neighbours, their city, their community.</p>
       <div class="about-values">
         <div class="about-value">
           <span class="about-value-icon">🤝</span>
@@ -968,8 +1030,8 @@ nav ul a:hover { color: var(--accent); }
       </div>
       <div class="about-quote">
         <div class="about-quote-mark">"</div>
-        <p>Every small business has a story worth telling. Zoncik is where those stories get found.</p>
-        <div class="about-quote-author">— The Zoncik Team, Vienna</div>
+        <p>Every small business has a story worth telling. ZonՑik is where those stories get found.</p>
+        <div class="about-quote-author">— The ZonՑik Team, Vienna</div>
       </div>
     </div>
 
@@ -981,9 +1043,9 @@ nav ul a:hover { color: var(--accent); }
   <div class="cta-banner">
     <div class="cta-text">
       <h2>Ready to get your business <em>noticed?</em></h2>
-      <p>Join hundreds of SMEs already reaching new customers through Zoncik — it's completely free to list.</p>
+      <p>Join hundreds of SMEs already reaching new customers through ZonՑik — it's completely free to list.</p>
     </div>
-    <a href="#" class="btn-white" onclick="openListModal();return false;">List Your Business →</a>
+    <a href="#" class="btn-white">List Your Business →</a>
   </div>
 </div>
 
@@ -994,8 +1056,7 @@ nav ul a:hover { color: var(--accent); }
     <!-- Brand column -->
     <div class="footer-brand">
       <div class="footer-logo">
-        Zoncik
-        <svg viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:26px;height:30px;transform:rotate(18deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.15))">
+        Zon<span style="color:#ff3dac">Ց</span>ik<svg viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:26px;height:30px;transform:rotate(18deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.15))">
           <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22Z" fill="#ff3dac"/>
           <path d="M22 24 Q25 14 30 22 Q35 12 30 2 Q25 12 22 24Z" fill="#c040f0"/>
           <path d="M30 22 Q35 14 38 24 Q47 18 56 28 Q44 4 30 2Z" fill="#1a6fff"/>
@@ -1032,7 +1093,7 @@ nav ul a:hover { color: var(--accent); }
     <!-- Company column -->
     <div class="footer-col">
       <div class="footer-col-title">Company</div>
-      <a href="#about">About Zoncik</a>
+      <a href="#about">About ZonՑik</a>
       <a href="#">How it works</a>
       <a href="#">Blog</a>
       <a href="#">Press</a>
@@ -1062,70 +1123,13 @@ nav ul a:hover { color: var(--accent); }
   </div>
 
   <div class="footer-bottom">
-    <span>© 2026 Zoncik. All rights reserved.</span>
+    <span>© 2026 ZonՑik. All rights reserved.</span>
     <span>Made with ☂️ in Vienna, AT</span>
   </div>
 </footer>
 
-<!-- LIST YOUR BUSINESS MODAL -->
-<div class="modal-overlay" id="listModal">
-  <div class="modal">
-    <h2>List Your Business</h2>
-    <p>Fill in the details below and join hundreds of local businesses on Zoncik.</p>
-    <form id="listForm">
-      <label for="biz-name">Business Name *</label>
-      <input type="text" id="biz-name" required placeholder="e.g. Morning Roast Co."/>
-
-      <label for="biz-desc">Description *</label>
-      <textarea id="biz-desc" required placeholder="Tell people what makes your business special..."></textarea>
-
-      <label for="biz-category">Category *</label>
-      <select id="biz-category" required>
-        <option value="">Select a category</option>
-        <option value="food">Food & Retail</option>
-        <option value="tech">Tech & Services</option>
-        <option value="craft">Crafts & Local</option>
-        <option value="health">Health & Wellness</option>
-        <option value="fashion">Fashion</option>
-      </select>
-
-      <label for="biz-city">City *</label>
-      <input type="text" id="biz-city" required placeholder="e.g. Vienna"/>
-
-      <label for="biz-country">Country Code</label>
-      <input type="text" id="biz-country" placeholder="e.g. AT" value="AT" maxlength="5"/>
-
-      <label for="biz-tags">Tags (comma-separated)</label>
-      <input type="text" id="biz-tags" placeholder="e.g. Organic, Artisan, Grocery"/>
-
-      <label for="biz-website">Website</label>
-      <input type="url" id="biz-website" placeholder="https://yourbusiness.com"/>
-
-      <label for="biz-emoji">Emoji Icon</label>
-      <input type="text" id="biz-emoji" placeholder="e.g. &#x1F3EA;" maxlength="4"/>
-
-      <label for="biz-price">Price Range</label>
-      <select id="biz-price">
-        <option value="1">&euro;</option>
-        <option value="2" selected>&euro;&euro;</option>
-        <option value="3">&euro;&euro;&euro;</option>
-        <option value="4">&euro;&euro;&euro;&euro;</option>
-      </select>
-
-      <div class="success-msg" id="formSuccess">Business submitted successfully!</div>
-      <div class="error-msg" id="formError">Something went wrong. Please try again.</div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeListModal()">Cancel</button>
-        <button type="submit" class="btn-submit">Submit Business</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
   let activeFilter = 'all';
-  let allBusinesses = [];
 
   const categoryNames = {
     all: 'All Businesses',
@@ -1136,62 +1140,6 @@ nav ul a:hover { color: var(--accent); }
     fashion: 'Fashion'
   };
 
-  const categoryLabels = {
-    food: 'Food & Retail',
-    tech: 'Tech & Services',
-    craft: 'Crafts & Local',
-    health: 'Health & Wellness',
-    fashion: 'Fashion'
-  };
-
-  // ── Render a single business card as HTML ──
-  function renderCard(biz) {
-    const tagsHtml = (biz.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
-    const featuredBadge = biz.featured ? '<span class="badge-featured">&#x2605; Featured</span>' : '';
-    const websiteLink = biz.website
-      ? `<a href="${escapeHtml(biz.website)}" class="card-link" target="_blank" rel="noopener">Visit Site &rarr;</a>`
-      : '';
-    return `
-      <div class="card" data-category="${escapeHtml(biz.category)}" data-name="${escapeHtml(biz.name)}" data-tags="${escapeHtml((biz.tags || []).join(' '))}">
-        <div class="card-banner"><div class="card-emoji">${biz.emoji || '&#x1F3EA;'}</div>${featuredBadge}</div>
-        <div class="card-body">
-          <div class="card-category">${escapeHtml(biz.category_label)}</div>
-          <div class="card-name">${escapeHtml(biz.name)}</div>
-          <div class="card-desc">${escapeHtml(biz.description)}</div>
-          <div class="card-tags">${tagsHtml}</div>
-          <div class="card-footer">
-            <span class="card-location">&#x1F4CD; ${escapeHtml(biz.city)}, ${escapeHtml(biz.country)}</span>
-            ${websiteLink}
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  // ── Fetch businesses from API ──
-  async function loadBusinesses(params) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    try {
-      const res = await fetch('/api/businesses' + qs);
-      const data = await res.json();
-      allBusinesses = data.businesses;
-      renderAllCards();
-    } catch (err) {
-      console.error('Failed to load businesses:', err);
-    }
-  }
-
-  function renderAllCards() {
-    const grid = document.getElementById('cardGrid');
-    grid.innerHTML = allBusinesses.map(renderCard).join('');
-    filterCards();
-  }
-
-  // ── Sidebar & filter functions ──
   function setFilter(cat, btn) {
     activeFilter = cat;
     btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
@@ -1210,6 +1158,7 @@ nav ul a:hover { color: var(--accent); }
 
   function heroFilterFromNav(cat) {
     activeFilter = cat;
+    // sync sidebar
     document.querySelectorAll('.sidebar-item').forEach(b => {
       const oc = b.getAttribute('onclick') || '';
       b.classList.toggle('active', oc.includes("'" + cat + "'"));
@@ -1228,73 +1177,10 @@ nav ul a:hover { color: var(--accent); }
       card.classList.toggle('hidden', !ok);
       if (ok) { visible++; card.style.animationDelay = (visible * 0.05) + 's'; }
     });
-    document.getElementById('countLabel').textContent = `Showing ${visible} business${visible !== 1 ? 'es' : ''}`;
+    const label = `Showing ${visible} business${visible !== 1 ? 'es' : ''}`;
+    document.getElementById('countLabel').textContent = label;
     document.getElementById('sectionTitle').textContent = categoryNames[activeFilter] || 'All Businesses';
   }
-
-  // ── Modal functions ──
-  function openListModal() {
-    document.getElementById('listModal').classList.add('open');
-    document.getElementById('formSuccess').style.display = 'none';
-    document.getElementById('formError').style.display = 'none';
-  }
-
-  function closeListModal() {
-    document.getElementById('listModal').classList.remove('open');
-    document.getElementById('listForm').reset();
-  }
-
-  // Close modal on overlay click
-  document.getElementById('listModal').addEventListener('click', function(e) {
-    if (e.target === this) closeListModal();
-  });
-
-  // ── Form submission ──
-  document.getElementById('listForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const cat = document.getElementById('biz-category').value;
-    const tagsRaw = document.getElementById('biz-tags').value;
-    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-    const body = {
-      name: document.getElementById('biz-name').value.trim(),
-      description: document.getElementById('biz-desc').value.trim(),
-      category: cat,
-      category_label: categoryLabels[cat] || cat,
-      city: document.getElementById('biz-city').value.trim(),
-      country: document.getElementById('biz-country').value.trim() || 'AT',
-      tags: tags,
-      website: document.getElementById('biz-website').value.trim() || null,
-      emoji: document.getElementById('biz-emoji').value.trim() || '🏪',
-      price_range: parseInt(document.getElementById('biz-price').value, 10)
-    };
-
-    try {
-      const res = await fetch('/api/businesses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) throw new Error('Submit failed');
-
-      document.getElementById('formSuccess').style.display = 'block';
-      document.getElementById('formError').style.display = 'none';
-
-      // Reload businesses after short delay to show success message
-      setTimeout(() => {
-        closeListModal();
-        loadBusinesses();
-      }, 1200);
-    } catch (err) {
-      console.error('Submit error:', err);
-      document.getElementById('formError').style.display = 'block';
-      document.getElementById('formSuccess').style.display = 'none';
-    }
-  });
-
-  // ── Initial load ──
-  loadBusinesses();
 </script>
 </body>
 </html>
