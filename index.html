@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Zoncik — Find Local Businesses</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;1,400;1,600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #f7f5ff;
+  --surface:    #ffffff;
+  --ink:        #1c1830;
+  --ink-mid:    #5c5880;
+  --ink-soft:   #9896b0;
+  --border:     #e8e4f8;
+  --lavender:   #c8c0f8;
+  --peach:      #ffd4b8;
+  --mint:       #b8f0da;
+  --sky:        #b8e0f8;
+  --rose:       #fbc8d8;
+  --lemon:      #fef0b0;
+  --accent:     #7c6ff0;
+  --accent-soft:#ede8ff;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(ellipse 600px 500px at 10% 0%, #c8c0f830 0%, transparent 70%),
+    radial-gradient(ellipse 500px 400px at 95% 80%, #ffd4b825 0%, transparent 70%),
+    radial-gradient(ellipse 400px 400px at 60% 50%, #b8f0da18 0%, transparent 70%);
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(247,245,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1.5px solid var(--border);
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 0 5vw; height: 64px;
+}
+
+.nav-search-box {
+  flex: 1; max-width: 420px;
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 999px; padding: 0.5rem 1.1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.nav-search-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #7c6ff018;
+}
+.nav-search-box input {
+  border: none; background: transparent; outline: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.88rem; font-weight: 500;
+  color: var(--ink); flex: 1;
+}
+.nav-search-box input::placeholder { color: var(--ink-soft); }
+
+.logo {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 1.75rem; font-weight: 600;
+  color: var(--accent); letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 0.5rem;
+  text-decoration: none;
+}
+.logo-umbrella {
+  width: 34px; height: 40px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.13));
+  transition: transform 0.3s ease;
+  transform: rotate(18deg);
+  flex-shrink: 0;
+}
+.logo:hover .logo-umbrella {
+  transform: rotate(18deg) translateY(-4px);
+}
+
+nav ul { display: flex; gap: 2rem; list-style: none; align-items: center; margin-left: auto; }
+
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+.nav-chevron { font-size: 0.7rem; transition: transform 0.2s; display: inline-block; }
+.nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute; top: calc(100% + 0.75rem); right: 0;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 1rem;
+  padding: 0.5rem;
+  min-width: 200px;
+  box-shadow: 0 8px 32px #7c6ff018;
+  z-index: 200;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.nav-dropdown:hover .nav-dropdown-menu { display: flex; }
+.nav-dropdown-menu a {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.85rem; border-radius: 0.6rem;
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--ink-mid) !important; text-decoration: none;
+  transition: background 0.14s, color 0.14s;
+  opacity: 1 !important;
+}
+.nav-dropdown-menu a:hover { background: var(--accent-soft); color: var(--accent) !important; }
+nav ul a {
+  text-decoration: none; color: var(--ink-mid);
+  font-size: 0.88rem; font-weight: 600; transition: color 0.2s;
+}
+nav ul a:hover { color: var(--accent); }
+.nav-cta {
+  background: var(--accent); color: #fff !important;
+  padding: 0.5rem 1.3rem; border-radius: 999px;
+  font-weight: 700 !important; font-size: 0.85rem !important;
+  box-shadow: 0 4px 16px #7c6ff030;
+  transition: box-shadow 0.2s, transform 0.15s !important;
+}
+.nav-cta:hover { box-shadow: 0 6px 22px #7c6ff050 !important; transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 2.8rem 1.5rem 2.5rem;
+  display: flex; flex-direction: column; align-items: center;
+  border-bottom: 1.5px solid var(--border);
+  background: var(--surface);
+}
+
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(2rem, 3.5vw, 2.9rem);
+  font-weight: 700; line-height: 1.15;
+  letter-spacing: -0.02em; color: var(--ink);
+  margin-bottom: 0.7rem; max-width: 680px;
+}
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero h1 .wavy { position: relative; display: inline-block; }
+.hero h1 .wavy::after {
+  content: '';
+  position: absolute; left: 0; bottom: -3px;
+  width: 100%; height: 5px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0 20 3 Q30 6 40 3 Q50 0 60 3 Q70 6 80 3' stroke='%23ffd4b8' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  background-size: 80px 5px;
+}
+
+.hero p {
+  color: var(--ink-mid); font-size: 1.05rem;
+  max-width: 540px; margin-bottom: 0; line-height: 1.75;
+}
+
+
+
+
+
+
+
+/* ── DIRECTORY ── */
+.page-body {
+  width: 100%;
+  padding: 2rem 1.5rem 5rem 1rem;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky; top: 72px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1.5px solid var(--border);
+}
+.sidebar-section:last-child { border-bottom: none; }
+
+.sidebar-heading {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 0.5rem;
+}
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.48rem 0.6rem; border-radius: 0.7rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.84rem; font-weight: 600;
+  color: var(--ink-mid); background: transparent;
+  border: none; cursor: pointer; text-align: left;
+  width: 100%; transition: background 0.14s, color 0.14s;
+}
+.sidebar-item:hover { background: var(--bg); color: var(--ink); }
+.sidebar-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.si-icon { font-size: 0.9rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
+.si-count {
+  margin-left: auto; font-size: 0.72rem;
+  color: var(--ink-soft); font-weight: 500;
+}
+
+/* Price chips */
+.price-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.price-chip {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 700;
+  padding: 0.3rem 0.7rem; border-radius: 0.6rem;
+  border: 1.5px solid var(--border);
+  background: var(--bg); color: var(--ink-mid);
+  cursor: pointer; transition: all 0.14s;
+}
+.price-chip:hover { border-color: var(--accent); color: var(--accent); }
+.price-chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--lavender); font-weight: 800; }
+
+.directory { width: 100%; }
+
+.section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.8rem;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--ink);
+}
+.section-count {
+  font-size: 0.8rem; color: var(--ink-soft); font-weight: 600;
+  background: var(--surface); border: 1.5px solid var(--border);
+  padding: 0.3rem 0.9rem; border-radius: 999px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 1.6rem; overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  animation: riseUp 0.4s ease both;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 48px #7c6ff018;
+  border-color: var(--lavender);
+}
+@keyframes riseUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-banner {
+  height: 100px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.card[data-category="food"]    .card-banner { background: linear-gradient(135deg, #fff0d8, var(--peach)); }
+.card[data-category="tech"]    .card-banner { background: linear-gradient(135deg, #e8f4ff, var(--sky)); }
+.card[data-category="craft"]   .card-banner { background: linear-gradient(135deg, #e8fff4, var(--mint)); }
+.card[data-category="health"]  .card-banner { background: linear-gradient(135deg, #fff0f4, var(--rose)); }
+.card[data-category="fashion"] .card-banner { background: linear-gradient(135deg, #f8f0ff, var(--lavender)); }
+
+.card-emoji {
+  font-size: 2.4rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
+}
+
+.badge-featured {
+  position: absolute; top: 0.75rem; right: 0.9rem;
+  background: var(--lemon); color: #705000;
+  font-size: 0.65rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  border: 1.5px solid #f0d060;
+}
+
+.card-body {
+  padding: 1.4rem 1.4rem 1.3rem;
+  flex: 1; display: flex; flex-direction: column;
+}
+
+.card-category {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem;
+}
+.card[data-category="food"]    .card-category { color: #c06820; }
+.card[data-category="tech"]    .card-category { color: #2068b0; }
+.card[data-category="craft"]   .card-category { color: #207858; }
+.card[data-category="health"]  .card-category { color: #b04060; }
+.card[data-category="fashion"] .card-category { color: #6040b0; }
+
+.card-name {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem; font-weight: 700;
+  color: var(--ink); margin-bottom: 0.45rem;
+  line-height: 1.25; letter-spacing: -0.01em;
+}
+.card-desc {
+  font-size: 0.84rem; color: var(--ink-mid);
+  line-height: 1.65; flex: 1; margin-bottom: 1rem;
+}
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.38rem; margin-bottom: 1rem; }
+.tag {
+  font-size: 0.7rem; font-weight: 700;
+  padding: 0.22rem 0.65rem; border-radius: 999px; border: 1.5px solid;
+}
+.card[data-category="food"]    .tag { background: #fff5ec; color: #c06820; border-color: #ffd4a0; }
+.card[data-category="tech"]    .tag { background: #eef5ff; color: #2068b0; border-color: #b8d8f8; }
+.card[data-category="craft"]   .tag { background: #edfaf4; color: #207858; border-color: #b8ecd8; }
+.card[data-category="health"]  .tag { background: #fff0f4; color: #b04060; border-color: #f8c8d8; }
+.card[data-category="fashion"] .tag { background: #f5f0ff; color: #6040b0; border-color: #d0c0f8; }
+
+.card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 0.9rem; border-top: 1.5px solid var(--border);
+}
+.card-location { font-size: 0.76rem; color: var(--ink-soft); font-weight: 600; }
+.card-link {
+  font-size: 0.8rem; font-weight: 800;
+  padding: 0.42rem 1rem; border-radius: 999px;
+  text-decoration: none; transition: transform 0.14s, box-shadow 0.14s;
+  display: inline-flex; align-items: center; gap: 0.25rem;
+}
+.card[data-category="food"]    .card-link { background: #fff0e4; color: #c06820; }
+.card[data-category="food"]    .card-link:hover { background: #c06820; color: #fff; box-shadow: 0 4px 14px #c0682030; }
+.card[data-category="tech"]    .card-link { background: #e8f4ff; color: #2068b0; }
+.card[data-category="tech"]    .card-link:hover { background: #2068b0; color: #fff; box-shadow: 0 4px 14px #2068b030; }
+.card[data-category="craft"]   .card-link { background: #edfaf4; color: #207858; }
+.card[data-category="craft"]   .card-link:hover { background: #207858; color: #fff; box-shadow: 0 4px 14px #20785830; }
+.card[data-category="health"]  .card-link { background: #fff0f4; color: #b04060; }
+.card[data-category="health"]  .card-link:hover { background: #b04060; color: #fff; box-shadow: 0 4px 14px #b0406030; }
+.card[data-category="fashion"] .card-link { background: #f4f0ff; color: #6040b0; }
+.card[data-category="fashion"] .card-link:hover { background: #6040b0; color: #fff; box-shadow: 0 4px 14px #6040b030; }
+
+/* ── CTA ── */
+.cta-wrap { width: 100%; margin: 0 auto 5rem; padding: 0 1.5rem; }
+.cta-banner {
+  background: linear-gradient(135deg, var(--accent) 0%, #a898f8 100%);
+  border-radius: 2rem; padding: 3.5rem 4rem;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 2rem; flex-wrap: wrap; position: relative; overflow: hidden;
+}
+.cta-banner::before {
+  content: ''; position: absolute; right: -80px; top: -80px;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+.cta-banner::after {
+  content: ''; position: absolute; left: 30%; bottom: -60px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+}
+.cta-text { position: relative; z-index: 1; }
+.cta-banner h2 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+  font-weight: 700; color: #fff; line-height: 1.2; max-width: 440px;
+}
+.cta-banner h2 em { font-style: italic; font-weight: 400; }
+.cta-banner p { color: rgba(255,255,255,0.75); font-size: 0.92rem; margin-top: 0.5rem; }
+.btn-white {
+  position: relative; z-index: 1;
+  background: #fff; color: var(--accent);
+  padding: 0.85rem 2.2rem; border-radius: 999px;
+  font-size: 0.92rem; font-weight: 800;
+  text-decoration: none; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transition: transform 0.15s, box-shadow 0.15s; display: inline-block;
+}
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.18); }
+
+/* ── ABOUT ── */
+.about-section {
+  background: var(--surface);
+  border-top: 1.5px solid var(--border);
+  border-bottom: 1.5px solid var(--border);
+  padding: 5rem 1.5rem;
+  margin-bottom: 0;
+}
+
+.about-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4rem; align-items: start;
+}
+
+.about-pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 0.75rem; font-weight: 700;
+  padding: 0.35rem 1rem; border-radius: 999px;
+  margin-bottom: 1.2rem;
+  border: 1.5px solid var(--lavender);
+}
+.about-pill-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+.about-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 700; line-height: 1.15;
+  letter-spacing: -0.02em; color: var(--ink);
+  margin-bottom: 1.2rem;
+}
+.about-title em { font-style: italic; color: var(--accent); }
+.about-wavy { position: relative; display: inline-block; }
+.about-wavy::after {
+  content: '';
+  position: absolute; left: 0; bottom: -3px;
+  width: 100%; height: 5px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 6'%3E%3Cpath d='M0 3 Q10 0 20 3 Q30 6 40 3 Q50 0 60 3 Q70 6 80 3' stroke='%23ffd4b8' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  background-size: 80px 5px;
+}
+
+.about-lead {
+  font-size: 1rem; font-weight: 600; color: var(--ink);
+  line-height: 1.7; margin-bottom: 1rem;
+}
+.about-body {
+  font-size: 0.9rem; color: var(--ink-mid);
+  line-height: 1.8; margin-bottom: 1.8rem;
+}
+
+.about-values { display: flex; flex-direction: column; gap: 1.1rem; }
+.about-value {
+  display: flex; align-items: flex-start; gap: 0.9rem;
+  padding: 0.9rem 1rem; border-radius: 1rem;
+  background: var(--bg); border: 1.5px solid var(--border);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.about-value:hover { border-color: var(--lavender); box-shadow: 0 4px 16px #7c6ff010; }
+.av-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 0.1rem; }
+.av-title { font-size: 0.88rem; font-weight: 700; color: var(--ink); margin-bottom: 0.2rem; }
+.av-desc { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.5; }
+
+/* Right side stat cards */
+.about-right {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; align-content: start;
+}
+
+.about-card {
+  border-radius: 1.4rem; padding: 1.4rem 1.2rem;
+  display: flex; align-items: center; gap: 1rem;
+  border: 1.5px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.about-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px #7c6ff015; }
+
+.ac-main {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--accent-soft), #f0ecff);
+  border-color: var(--lavender);
+}
+.ac-secondary { background: var(--bg); }
+
+.ac-emoji { font-size: 2rem; flex-shrink: 0; }
+.ac-num {
+  font-family: 'Fraunces', serif;
+  font-size: 2rem; font-weight: 700; color: var(--accent);
+  line-height: 1;
+}
+.ac-label { font-size: 0.78rem; color: var(--ink-soft); font-weight: 600; margin-top: 0.2rem; }
+
+.about-quote {
+  grid-column: 1 / -1;
+  background: var(--ink); border-radius: 1.4rem;
+  padding: 1.6rem 1.6rem 1.4rem;
+  position: relative;
+}
+.aq-mark {
+  font-family: 'Fraunces', serif;
+  font-size: 4rem; color: var(--accent);
+  line-height: 0.5; margin-bottom: 0.8rem;
+  opacity: 0.6;
+}
+.about-quote p {
+  font-size: 0.92rem; color: rgba(255,255,255,0.85);
+  line-height: 1.7; font-style: italic; margin-bottom: 0.8rem;
+}
+.aq-author { font-size: 0.75rem; color: var(--ink-soft); font-weight: 600; }
+
+/* ── ABOUT ── */
+.about-section {
+  background: var(--surface);
+  border-top: 1.5px solid var(--border);
+  border-bottom: 1.5px solid var(--border);
+  padding: 5rem 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.about-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 5rem; align-items: center;
+}
+
+.about-pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 0.75rem; font-weight: 700;
+  padding: 0.35rem 1rem; border-radius: 999px;
+  margin-bottom: 1.2rem;
+  border: 1.5px solid var(--lavender);
+}
+.about-pill-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+.about-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+  font-weight: 700; line-height: 1.15;
+  letter-spacing: -0.02em; color: var(--ink);
+  margin-bottom: 1.2rem;
+}
+.about-title em { font-style: italic; color: var(--accent); }
+
+.about-desc {
+  font-size: 0.95rem; color: var(--ink-mid);
+  line-height: 1.8; margin-bottom: 1rem;
+}
+
+.about-values { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 1.8rem; }
+.about-value {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 1rem; padding: 0.85rem 1.1rem;
+}
+.about-value-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
+.about-value-title { font-size: 0.88rem; font-weight: 700; color: var(--ink); margin-bottom: 0.15rem; }
+.about-value-desc { font-size: 0.78rem; color: var(--ink-soft); font-weight: 500; }
+
+/* Right column */
+.about-right { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.about-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.about-stat {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 1.2rem; padding: 1.5rem 1.2rem;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.about-stat:hover { border-color: var(--lavender); box-shadow: 0 4px 20px #7c6ff012; }
+.about-stat-num {
+  font-family: 'Fraunces', serif;
+  font-size: 2.6rem; font-weight: 700; color: var(--accent);
+  line-height: 1; margin-bottom: 0.4rem;
+}
+.about-stat-num span { font-size: 1.6rem; }
+.about-stat-label { font-size: 0.78rem; color: var(--ink-soft); font-weight: 600; }
+
+.about-quote {
+  background: linear-gradient(135deg, var(--accent-soft), #fff);
+  border: 1.5px solid var(--lavender);
+  border-radius: 1.2rem; padding: 1.6rem 1.8rem;
+  position: relative;
+}
+.about-quote-mark {
+  font-family: 'Fraunces', serif;
+  font-size: 4rem; color: var(--lavender);
+  line-height: 0.5; margin-bottom: 0.8rem;
+}
+.about-quote p {
+  font-size: 0.95rem; color: var(--ink-mid);
+  line-height: 1.75; font-style: italic; margin-bottom: 0.8rem;
+}
+.about-quote-author {
+  font-size: 0.78rem; font-weight: 700; color: var(--accent);
+}
+
+@media (max-width: 860px) {
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+}
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--ink);
+  padding: 4rem 2rem 0;
+  margin-top: 0;
+}
+
+.footer-inner {
+  max-width: 1160px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 3rem;
+  padding-bottom: 3.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.footer-brand { display: flex; flex-direction: column; gap: 1rem; }
+
+.footer-logo {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 1.6rem; font-weight: 600;
+  color: #fff; letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.footer-tagline {
+  font-size: 0.83rem; color: rgba(255,255,255,0.5);
+  line-height: 1.7; max-width: 260px;
+}
+
+.footer-social { display: flex; gap: 0.5rem; margin-top: 0.3rem; }
+.social-btn {
+  width: 34px; height: 34px; border-radius: 0.5rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; transition: background 0.15s, color 0.15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.social-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.footer-col { display: flex; flex-direction: column; gap: 0.65rem; }
+
+.footer-col-title {
+  font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.9); margin-bottom: 0.3rem;
+}
+
+.footer-col a {
+  font-size: 0.83rem; color: rgba(255,255,255,0.45);
+  text-decoration: none; font-weight: 500;
+  transition: color 0.15s;
+}
+.footer-col a:hover { color: #fff; }
+
+.footer-bottom {
+  max-width: 1160px; margin: 0 auto;
+  padding: 1.4rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+  font-size: 0.78rem; color: rgba(255,255,255,0.3);
+  font-weight: 500;
+}
+
+@media (max-width: 860px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .footer-bottom { flex-direction: column; text-align: center; }
+}
+
+.card.hidden { display: none; }
+
+@media (max-width: 860px) {
+  .page-body { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .cta-banner { flex-direction: column; padding: 2rem; text-align: center; }
+  nav ul { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    Zoncik
+    <svg class="logo-umbrella" viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left panel: Pink -->
+      <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22Z" fill="#ff3dac"/>
+      <!-- Middle panel: Lila -->
+      <path d="M22 24 Q25 14 30 22 Q35 12 30 2 Q25 12 22 24Z" fill="#c040f0"/>
+      <!-- Right panel: Blue -->
+      <path d="M30 22 Q35 14 38 24 Q47 18 56 28 Q44 4 30 2Z" fill="#1a6fff"/>
+      <!-- Shine -->
+      <path d="M30 22 Q35 14 38 24 Q47 18 56 28 Q54 4 30 2 Q42 6 44 18Z" fill="#fff" opacity="0.15"/>
+      <!-- Outline -->
+      <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22 Q35 14 38 24 Q47 18 56 28 Q54 4 30 2Z"
+            stroke="#111" stroke-width="2.2" stroke-linejoin="round" fill="none"/>
+      <!-- Panel seams -->
+      <path d="M30 2 Q27 13 22 24" stroke="#111" stroke-width="1.3" stroke-linecap="round" opacity="0.4" fill="none"/>
+      <path d="M30 2 Q33 13 38 24" stroke="#111" stroke-width="1.3" stroke-linecap="round" opacity="0.4" fill="none"/>
+      <!-- Shaft -->
+      <line x1="30" y1="22" x2="30" y2="54" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Hook -->
+      <path d="M30 54 Q30 64 23 64 Q16 64 16 57" stroke="#111" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <!-- Finial -->
+      <circle cx="30" cy="2" r="2.8" fill="#111"/>
+      <circle cx="30" cy="2" r="1.3" fill="#fff"/>
+    </svg>
+  </div>
+  <div class="nav-search-box">
+    <svg width="14" height="14" fill="none" stroke="#9896b0" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search businesses, products, tags…" oninput="filterCards()"/>
+  </div>
+  <ul>
+    <li class="nav-dropdown">
+      <a href="#" class="nav-dropdown-toggle">Categories <span class="nav-chevron">▾</span></a>
+      <div class="nav-dropdown-menu">
+        <a href="#" onclick="setFilter('all', document.querySelector('.sidebar-item'));return false;">✦ All Businesses</a>
+        <a href="#" onclick="heroFilterFromNav('food');return false;">🛒 Food & Retail</a>
+        <a href="#" onclick="heroFilterFromNav('tech');return false;">⚡ Tech & Services</a>
+        <a href="#" onclick="heroFilterFromNav('craft');return false;">✦ Crafts & Local</a>
+        <a href="#" onclick="heroFilterFromNav('health');return false;">◎ Health & Wellness</a>
+        <a href="#" onclick="heroFilterFromNav('fashion');return false;">◈ Fashion</a>
+      </div>
+    </li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#" class="nav-cta">List Your Business</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <h1>Discover <em>local</em> businesses you'll <span class="wavy">love</span></h1>
+  <p>Zoncik brings small and medium businesses to the spotlight — from food &amp; crafts to tech &amp; wellness. Browse freely, find your favourites.</p>
+</section>
+
+
+
+<!-- PAGE BODY: sidebar + directory -->
+<div class="page-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Category</div>
+      <button class="sidebar-item active" onclick="setFilter('all',this)"><span class="si-icon">✦</span> All Businesses<span class="si-count">9</span></button>
+      <button class="sidebar-item" onclick="setFilter('food',this)"><span class="si-icon">🛒</span> Food & Retail<span class="si-count">3</span></button>
+      <button class="sidebar-item" onclick="setFilter('tech',this)"><span class="si-icon">⚡</span> Tech & Services<span class="si-count">2</span></button>
+      <button class="sidebar-item" onclick="setFilter('craft',this)"><span class="si-icon">✦</span> Crafts & Local<span class="si-count">2</span></button>
+      <button class="sidebar-item" onclick="setFilter('health',this)"><span class="si-icon">◎</span> Health & Wellness<span class="si-count">2</span></button>
+      <button class="sidebar-item" onclick="setFilter('fashion',this)"><span class="si-icon">◈</span> Fashion<span class="si-count">1</span></button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Rating</div>
+      <button class="sidebar-item" onclick="setSingle(this,'rating')"><span class="si-icon">⭐</span> Any rating</button>
+      <button class="sidebar-item" onclick="setSingle(this,'rating')"><span class="si-icon">⭐</span> 3+ stars</button>
+      <button class="sidebar-item" onclick="setSingle(this,'rating')"><span class="si-icon">⭐</span> 4+ stars</button>
+      <button class="sidebar-item" onclick="setSingle(this,'rating')"><span class="si-icon">⭐</span> 5 stars only</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Price range</div>
+      <div class="price-chips">
+        <button class="price-chip active" onclick="togglePrice(this)">€</button>
+        <button class="price-chip" onclick="togglePrice(this)">€€</button>
+        <button class="price-chip" onclick="togglePrice(this)">€€€</button>
+        <button class="price-chip" onclick="togglePrice(this)">€€€€</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Location</div>
+      <button class="sidebar-item active" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> All locations</button>
+      <button class="sidebar-item" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> Vienna</button>
+      <button class="sidebar-item" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> Graz</button>
+      <button class="sidebar-item" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> Salzburg</button>
+      <button class="sidebar-item" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> Innsbruck</button>
+      <button class="sidebar-item" onclick="setSingle(this,'loc')"><span class="si-icon">📍</span> Berlin</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Features</div>
+      <button class="sidebar-item" onclick="this.classList.toggle('active')"><span class="si-icon">★</span> Featured only</button>
+      <button class="sidebar-item" onclick="this.classList.toggle('active')"><span class="si-icon">🌐</span> Has website</button>
+    </div>
+
+  </aside>
+
+  <!-- DIRECTORY -->
+  <section class="directory" id="directory">
+    <div class="section-header">
+      <h2 class="section-title" id="sectionTitle">All Businesses</h2>
+      <span class="section-count" id="countLabel">Showing 9 businesses</span>
+    </div>
+    <div class="grid" id="cardGrid">
+
+    <div class="card" data-category="food" data-name="The Spice Route" data-tags="spices organic grocery">
+      <div class="card-banner"><div class="card-emoji">🫙</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Food & Retail</div>
+        <div class="card-name">The Spice Route</div>
+        <div class="card-desc">Premium artisan spices and organic pantry essentials sourced directly from small farms around the world.</div>
+        <div class="card-tags"><span class="tag">Organic</span><span class="tag">Artisan</span><span class="tag">Grocery</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="tech" data-name="Pixelsmith Studio" data-tags="design branding digital">
+      <div class="card-banner"><div class="card-emoji">🖥️</div></div>
+      <div class="card-body">
+        <div class="card-category">Tech & Services</div>
+        <div class="card-name">Pixelsmith Studio</div>
+        <div class="card-desc">A boutique digital design studio specialising in brand identity, UI/UX, and motion graphics for growing businesses.</div>
+        <div class="card-tags"><span class="tag">Branding</span><span class="tag">UI/UX</span><span class="tag">Motion</span></div>
+        <div class="card-footer"><span class="card-location">📍 Berlin, DE</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="craft" data-name="Atelier Loom" data-tags="handmade textile weaving home">
+      <div class="card-banner"><div class="card-emoji">🪡</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Crafts & Local</div>
+        <div class="card-name">Atelier Loom</div>
+        <div class="card-desc">Handwoven textiles and home décor made using traditional techniques passed down through three generations of weavers.</div>
+        <div class="card-tags"><span class="tag">Handmade</span><span class="tag">Textile</span><span class="tag">Home Décor</span></div>
+        <div class="card-footer"><span class="card-location">📍 Graz, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="health" data-name="Verdure Wellness" data-tags="wellness herbal supplements health">
+      <div class="card-banner"><div class="card-emoji">🧴</div></div>
+      <div class="card-body">
+        <div class="card-category">Health & Wellness</div>
+        <div class="card-name">Verdure Wellness</div>
+        <div class="card-desc">Natural herbal supplements and wellness products crafted with certified organic ingredients for everyday vitality.</div>
+        <div class="card-tags"><span class="tag">Herbal</span><span class="tag">Organic</span><span class="tag">Supplements</span></div>
+        <div class="card-footer"><span class="card-location">📍 Salzburg, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="fashion" data-name="Fold & Form" data-tags="fashion sustainable clothing">
+      <div class="card-banner"><div class="card-emoji">🧣</div></div>
+      <div class="card-body">
+        <div class="card-category">Fashion</div>
+        <div class="card-name">Fold & Form</div>
+        <div class="card-desc">Slow fashion essentials made from sustainable fabrics. Timeless silhouettes designed to last seasons, not just trends.</div>
+        <div class="card-tags"><span class="tag">Sustainable</span><span class="tag">Slow Fashion</span><span class="tag">Clothing</span></div>
+        <div class="card-footer"><span class="card-location">📍 Linz, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="tech" data-name="Clarity Bookkeeping" data-tags="finance accounting bookkeeping">
+      <div class="card-banner"><div class="card-emoji">🗂️</div></div>
+      <div class="card-body">
+        <div class="card-category">Tech & Services</div>
+        <div class="card-name">Clarity Bookkeeping</div>
+        <div class="card-desc">Friendly, cloud-based bookkeeping and financial consulting for small businesses who want clarity without complexity.</div>
+        <div class="card-tags"><span class="tag">Finance</span><span class="tag">Accounting</span><span class="tag">Cloud</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="food" data-name="Morning Roast Co." data-tags="coffee roastery specialty">
+      <div class="card-banner"><div class="card-emoji">🫖</div><span class="badge-featured">★ Featured</span></div>
+      <div class="card-body">
+        <div class="card-category">Food & Retail</div>
+        <div class="card-name">Morning Roast Co.</div>
+        <div class="card-desc">Specialty single-origin coffee roasted in small batches. Sourced ethically, roasted locally, delivered fresh to your door.</div>
+        <div class="card-tags"><span class="tag">Coffee</span><span class="tag">Specialty</span><span class="tag">Ethical</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="craft" data-name="Woodcraft & Co." data-tags="woodworking furniture handmade">
+      <div class="card-banner"><div class="card-emoji">🪑</div></div>
+      <div class="card-body">
+        <div class="card-category">Crafts & Local</div>
+        <div class="card-name">Woodcraft & Co.</div>
+        <div class="card-desc">Custom-made wooden furniture and home objects. Each piece is unique, hand-finished, and built to become a family heirloom.</div>
+        <div class="card-tags"><span class="tag">Furniture</span><span class="tag">Handmade</span><span class="tag">Custom</span></div>
+        <div class="card-footer"><span class="card-location">📍 Innsbruck, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    <div class="card" data-category="health" data-name="MindSpace Studio" data-tags="yoga meditation wellness mindfulness">
+      <div class="card-banner"><div class="card-emoji">🫧</div></div>
+      <div class="card-body">
+        <div class="card-category">Health & Wellness</div>
+        <div class="card-name">MindSpace Studio</div>
+        <div class="card-desc">Online and in-person yoga, breathwork, and meditation classes for individuals and corporate teams seeking balance.</div>
+        <div class="card-tags"><span class="tag">Yoga</span><span class="tag">Meditation</span><span class="tag">Corporate</span></div>
+        <div class="card-footer"><span class="card-location">📍 Vienna, AT</span><a href="#" class="card-link">Visit Site →</a></div>
+      </div>
+    </div>
+
+    </div>
+  </section>
+
+</div><!-- end page-body -->
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div class="about-inner">
+
+    <div class="about-left">
+      <div class="about-pill"><span class="about-pill-dot"></span> About Zoncik</div>
+      <h2 class="about-title">We believe <em>local businesses</em> deserve the <span class="about-wavy">spotlight</span></h2>
+      <p class="about-lead">Zoncik was built with a simple idea: small and medium businesses are the backbone of every community, yet they're often the hardest to find online.</p>
+      <p class="about-body">We created a space where SMEs can be discovered without competing against giant ad budgets — and where people can find authentic, local alternatives to big-box brands. No algorithms. No paid placements. Just great businesses, listed fairly.</p>
+      <div class="about-values">
+        <div class="about-value">
+          <span class="av-icon">🤝</span>
+          <div>
+            <div class="av-title">Community first</div>
+            <div class="av-desc">Every listing supports a real person running a real business in your area.</div>
+          </div>
+        </div>
+        <div class="about-value">
+          <span class="av-icon">🆓</span>
+          <div>
+            <div class="av-title">Free to list, free to browse</div>
+            <div class="av-desc">No paywalls, no commissions. We keep it open for everyone.</div>
+          </div>
+        </div>
+        <div class="about-value">
+          <span class="av-icon">🌍</span>
+          <div>
+            <div class="av-title">Built for Europe</div>
+            <div class="av-desc">Starting in Austria, expanding across the EU — one city at a time.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-right">
+      <div class="about-card ac-main">
+        <div class="ac-emoji">🏪</div>
+        <div class="ac-text">
+          <div class="ac-num">240+</div>
+          <div class="ac-label">Businesses listed</div>
+        </div>
+      </div>
+      <div class="about-card ac-secondary">
+        <div class="ac-emoji">🏙️</div>
+        <div class="ac-text">
+          <div class="ac-num">12</div>
+          <div class="ac-label">Cities covered</div>
+        </div>
+      </div>
+      <div class="about-card ac-secondary">
+        <div class="ac-emoji">📂</div>
+        <div class="ac-text">
+          <div class="ac-num">18</div>
+          <div class="ac-label">Categories</div>
+        </div>
+      </div>
+      <div class="about-card ac-secondary">
+        <div class="ac-emoji">🚀</div>
+        <div class="ac-text">
+          <div class="ac-num">2024</div>
+          <div class="ac-label">Founded</div>
+        </div>
+      </div>
+      <div class="about-quote">
+        <div class="aq-mark">"</div>
+        <p>Finding a great local business shouldn't feel like searching for a needle in a haystack. Zoncik makes it effortless.</p>
+        <div class="aq-author">— Zoncik founding team, Vienna</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div class="about-inner">
+
+    <div class="about-text">
+      <div class="about-pill"><span class="about-pill-dot"></span> Our Story</div>
+      <h2 class="about-title">We believe <em>small businesses</em> deserve a big spotlight</h2>
+      <p class="about-desc">Zoncik was born out of a simple frustration — great local businesses were invisible online, buried under big brands and paid ads. We set out to change that.</p>
+      <p class="about-desc">Today Zoncik is a free, community-driven directory where small and medium businesses can be discovered by the people who matter most: their neighbours, their city, their community.</p>
+      <div class="about-values">
+        <div class="about-value">
+          <span class="about-value-icon">🤝</span>
+          <div>
+            <div class="about-value-title">Community first</div>
+            <div class="about-value-desc">Built for people, not algorithms.</div>
+          </div>
+        </div>
+        <div class="about-value">
+          <span class="about-value-icon">🆓</span>
+          <div>
+            <div class="about-value-title">Always free to list</div>
+            <div class="about-value-desc">No hidden fees, ever.</div>
+          </div>
+        </div>
+        <div class="about-value">
+          <span class="about-value-icon">🌍</span>
+          <div>
+            <div class="about-value-title">Local at heart</div>
+            <div class="about-value-desc">Celebrating businesses with roots.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-right">
+      <div class="about-stats">
+        <div class="about-stat">
+          <div class="about-stat-num">240<span>+</span></div>
+          <div class="about-stat-label">Businesses listed</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">18</div>
+          <div class="about-stat-label">Categories</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">6</div>
+          <div class="about-stat-label">Countries covered</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">100<span>%</span></div>
+          <div class="about-stat-label">Free to browse</div>
+        </div>
+      </div>
+      <div class="about-quote">
+        <div class="about-quote-mark">"</div>
+        <p>Every small business has a story worth telling. Zoncik is where those stories get found.</p>
+        <div class="about-quote-author">— The Zoncik Team, Vienna</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-banner">
+    <div class="cta-text">
+      <h2>Ready to get your business <em>noticed?</em></h2>
+      <p>Join hundreds of SMEs already reaching new customers through Zoncik — it's completely free to list.</p>
+    </div>
+    <a href="#" class="btn-white">List Your Business →</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+
+    <!-- Brand column -->
+    <div class="footer-brand">
+      <div class="footer-logo">
+        Zoncik
+        <svg viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:26px;height:30px;transform:rotate(18deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.15))">
+          <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22Z" fill="#ff3dac"/>
+          <path d="M22 24 Q25 14 30 22 Q35 12 30 2 Q25 12 22 24Z" fill="#c040f0"/>
+          <path d="M30 22 Q35 14 38 24 Q47 18 56 28 Q44 4 30 2Z" fill="#1a6fff"/>
+          <path d="M30 22 Q35 14 38 24 Q47 18 56 28 Q54 4 30 2 Q42 6 44 18Z" fill="#fff" opacity="0.15"/>
+          <path d="M30 2 Q11 4 4 28 Q12 18 22 24 Q25 14 30 22 Q35 14 38 24 Q47 18 56 28 Q54 4 30 2Z" stroke="#111" stroke-width="2.2" stroke-linejoin="round" fill="none"/>
+          <path d="M30 2 Q27 13 22 24" stroke="#111" stroke-width="1.3" stroke-linecap="round" opacity="0.4" fill="none"/>
+          <path d="M30 2 Q33 13 38 24" stroke="#111" stroke-width="1.3" stroke-linecap="round" opacity="0.4" fill="none"/>
+          <line x1="30" y1="22" x2="30" y2="54" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M30 54 Q30 64 23 64 Q16 64 16 57" stroke="#111" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="30" cy="2" r="2.8" fill="#111"/>
+          <circle cx="30" cy="2" r="1.3" fill="#fff"/>
+        </svg>
+      </div>
+      <p class="footer-tagline">Connecting small businesses with the people who matter most — their community.</p>
+      <div class="footer-social">
+        <a href="#" class="social-btn">𝕏</a>
+        <a href="#" class="social-btn">in</a>
+        <a href="#" class="social-btn">f</a>
+        <a href="#" class="social-btn">ig</a>
+      </div>
+    </div>
+
+    <!-- Explore column -->
+    <div class="footer-col">
+      <div class="footer-col-title">Explore</div>
+      <a href="#">All Businesses</a>
+      <a href="#">Food & Retail</a>
+      <a href="#">Tech & Services</a>
+      <a href="#">Crafts & Local</a>
+      <a href="#">Health & Wellness</a>
+      <a href="#">Fashion</a>
+    </div>
+
+    <!-- Company column -->
+    <div class="footer-col">
+      <div class="footer-col-title">Company</div>
+      <a href="#about">About Zoncik</a>
+      <a href="#">How it works</a>
+      <a href="#">Blog</a>
+      <a href="#">Press</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact us</a>
+    </div>
+
+    <!-- Business column -->
+    <div class="footer-col">
+      <div class="footer-col-title">For Businesses</div>
+      <a href="#">List Your Business</a>
+      <a href="#">Pricing</a>
+      <a href="#">Advertise</a>
+      <a href="#">Business FAQ</a>
+      <a href="#">Success Stories</a>
+    </div>
+
+    <!-- Legal column -->
+    <div class="footer-col">
+      <div class="footer-col-title">Legal</div>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Cookie Policy</a>
+      <a href="#">Accessibility</a>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 Zoncik. All rights reserved.</span>
+    <span>Made with ☂️ in Vienna, AT</span>
+  </div>
+</footer>
+
+<script>
+  let activeFilter = 'all';
+
+  const categoryNames = {
+    all: 'All Businesses',
+    food: 'Food & Retail',
+    tech: 'Tech & Services',
+    craft: 'Crafts & Local',
+    health: 'Health & Wellness',
+    fashion: 'Fashion'
+  };
+
+  function setFilter(cat, btn) {
+    activeFilter = cat;
+    btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterCards();
+  }
+
+  function setSingle(btn, group) {
+    btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function togglePrice(btn) {
+    btn.classList.toggle('active');
+  }
+
+  function heroFilterFromNav(cat) {
+    activeFilter = cat;
+    // sync sidebar
+    document.querySelectorAll('.sidebar-item').forEach(b => {
+      const oc = b.getAttribute('onclick') || '';
+      b.classList.toggle('active', oc.includes("'" + cat + "'"));
+    });
+    filterCards();
+    document.getElementById('directory').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function filterCards() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.card');
+    let visible = 0;
+    cards.forEach(card => {
+      const ok = (activeFilter === 'all' || card.dataset.category === activeFilter) &&
+                 (!q || card.dataset.name.toLowerCase().includes(q) || card.dataset.tags.toLowerCase().includes(q));
+      card.classList.toggle('hidden', !ok);
+      if (ok) { visible++; card.style.animationDelay = (visible * 0.05) + 's'; }
+    });
+    const label = `Showing ${visible} business${visible !== 1 ? 'es' : ''}`;
+    document.getElementById('countLabel').textContent = label;
+    document.getElementById('sectionTitle').textContent = categoryNames[activeFilter] || 'All Businesses';
+  }
+</script>
+</body>
+</html>
