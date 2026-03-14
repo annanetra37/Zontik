@@ -1,0 +1,17 @@
+{
+  "name": "zontik",
+  "version": "1.0.0",
+  "description": "Zoncik — Find Local Businesses",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
