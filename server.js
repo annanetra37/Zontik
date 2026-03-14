@@ -3,6 +3,17 @@ const express = require("express");
 const path = require("path");
 const { getPool, migrate } = require("./db");
 
+const multer = require("multer");
+
+const upload = multer({
+  dest: path.join(__dirname, "public", "uploads"),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (_req, file, cb) => {
+    if (/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Only JPEG, PNG, GIF, and WebP images are allowed"));
+  },
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -159,18 +170,26 @@ app.post("/api/businesses", async (req, res) => {
     ? tags.map((t) => t.trim()).filter(Boolean)
     : (tags || "").split(",").map((t) => t.trim()).filter(Boolean);
 
-  console.log(`New business submission: "${name}" (${category}) from ${city}, ${country}`);
+  // Extract domain from website for uniqueness check
+  let websiteDomain;
+  try {
+    websiteDomain = new URL(website).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    websiteDomain = website.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
+  }
+
+  console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
   try {
     await pool.query(
       `INSERT INTO businesses
-        (name, category, description, website, city, country,
+        (name, category, description, website, website_domain, city, country,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
          instagram, facebook, linkedin, tiktok, approved)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,TRUE)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,TRUE)`,
       [
-        name.trim(), category.trim(), description.trim(), website,
+        name.trim(), category.trim(), description.trim(), website, websiteDomain,
         city.trim(), (country || "").trim(),
         contact_email.trim(), contact_phone?.trim() || null,
         price_range || "€",
@@ -185,7 +204,7 @@ app.post("/api/businesses", async (req, res) => {
     res.status(201).json({ message: "Business listed successfully! It's now live on Zoncik." });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ error: "A business with this name and website already exists." });
+      return res.status(409).json({ error: `A business with the domain "${websiteDomain}" is already listed. Each domain can only be listed once.` });
     }
     console.error("POST /api/businesses error:", err.message);
     res.status(500).json({ error: "Failed to submit business" });
@@ -201,7 +220,7 @@ app.get("/api/businesses/:id/reviews", async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT id, reviewer_name, rating, comment, created_at
+      `SELECT id, reviewer_name, rating, comment, photo, created_at
        FROM reviews
        WHERE business_id = $1
        ORDER BY created_at DESC
@@ -215,8 +234,8 @@ app.get("/api/businesses/:id/reviews", async (req, res) => {
   }
 });
 
-// ── API: Submit a review ──
-app.post("/api/businesses/:id/reviews", async (req, res) => {
+// ── API: Submit a review (with optional photo) ──
+app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database is not available. Please try again later." });
 
@@ -233,6 +252,16 @@ app.post("/api/businesses/:id/reviews", async (req, res) => {
     return res.status(400).json({ error: "Rating must be between 1 and 5" });
   }
 
+  // Rename uploaded file to have proper extension
+  let photoPath = null;
+  if (req.file) {
+    const ext = req.file.mimetype.split("/")[1] === "jpeg" ? "jpg" : req.file.mimetype.split("/")[1];
+    const newName = req.file.filename + "." + ext;
+    const fs = require("fs");
+    fs.renameSync(req.file.path, req.file.path + "." + ext);
+    photoPath = "/uploads/" + newName;
+  }
+
   try {
     const { rows } = await pool.query(
       "SELECT id FROM businesses WHERE id = $1 AND approved = TRUE",
@@ -243,9 +272,9 @@ app.post("/api/businesses/:id/reviews", async (req, res) => {
     }
 
     await pool.query(
-      `INSERT INTO reviews (business_id, reviewer_name, rating, comment)
-       VALUES ($1, $2, $3, $4)`,
-      [businessId, reviewer_name.trim(), r, comment?.trim() || null]
+      `INSERT INTO reviews (business_id, reviewer_name, rating, comment, photo)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [businessId, reviewer_name.trim(), r, comment?.trim() || null, photoPath]
     );
 
     const stats = await pool.query(
@@ -254,7 +283,7 @@ app.post("/api/businesses/:id/reviews", async (req, res) => {
       [businessId]
     );
 
-    console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"`);
+    console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"${photoPath ? " (with photo)" : ""}`);
 
     res.status(201).json({
       message: "Review submitted!",
