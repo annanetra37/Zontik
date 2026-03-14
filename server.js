@@ -11,6 +11,32 @@ app.use(express.json());
 // Run migration on startup
 migrate().catch((err) => console.error("Migration failed:", err.message));
 
+// Blocked domains for website field — social media is not a business website
+const SOCIAL_DOMAINS = [
+  "instagram.com", "www.instagram.com",
+  "facebook.com", "www.facebook.com", "fb.com", "m.facebook.com",
+  "twitter.com", "www.twitter.com", "x.com", "www.x.com",
+  "tiktok.com", "www.tiktok.com",
+  "linkedin.com", "www.linkedin.com",
+  "youtube.com", "www.youtube.com", "youtu.be",
+  "pinterest.com", "www.pinterest.com",
+  "snapchat.com", "www.snapchat.com",
+  "reddit.com", "www.reddit.com",
+  "tumblr.com", "www.tumblr.com",
+  "threads.net", "www.threads.net",
+];
+
+function isSocialMediaUrl(url) {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return SOCIAL_DOMAINS.some((d) => hostname === d || hostname.endsWith("." + d));
+  } catch {
+    return false;
+  }
+}
+
+const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education"];
+
 // Health check
 app.get("/health", async (_req, res) => {
   const pool = getPool();
@@ -34,12 +60,21 @@ app.get("/api/businesses", async (_req, res) => {
   if (!pool) return res.json([]);
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, category, description, website, city, country,
-              price_range, tags, emoji, featured, year_founded,
-              short_tagline, instagram, facebook, linkedin
-       FROM businesses
-       WHERE approved = TRUE
-       ORDER BY featured DESC, created_at DESC`
+      `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
+              b.price_range, b.tags, b.emoji, b.featured, b.year_founded,
+              b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
+              COALESCE(r.avg_rating, 0) AS avg_rating,
+              COALESCE(r.review_count, 0) AS review_count
+       FROM businesses b
+       LEFT JOIN (
+         SELECT business_id,
+                ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+                COUNT(*) AS review_count
+         FROM reviews
+         GROUP BY business_id
+       ) r ON r.business_id = b.id
+       WHERE b.approved = TRUE
+       ORDER BY b.featured DESC, b.created_at DESC`
     );
     res.json(rows);
   } catch (err) {
@@ -57,7 +92,7 @@ app.post("/api/businesses", async (req, res) => {
     name, category, description, website, city, country,
     contact_email, contact_phone, price_range, tags, emoji,
     year_founded, owner_name, short_tagline,
-    instagram, facebook, linkedin,
+    instagram, facebook, linkedin, tiktok,
   } = req.body;
 
   // Validate required fields
@@ -77,15 +112,21 @@ app.post("/api/businesses", async (req, res) => {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
-  // Basic URL format check
+  // URL format check
   const urlPattern = /^https?:\/\/.+/i;
   if (!urlPattern.test(website.trim())) {
     return res.status(400).json({ error: "Website must start with http:// or https://" });
   }
 
-  const validCategories = ["food", "tech", "craft", "health", "fashion"];
-  if (!validCategories.includes(category)) {
-    return res.status(400).json({ error: `Category must be one of: ${validCategories.join(", ")}` });
+  // Reject social media URLs as website
+  if (isSocialMediaUrl(website.trim())) {
+    return res.status(400).json({
+      error: "Please enter your business domain, not a social media page. Add social links in the Social Media section.",
+    });
+  }
+
+  if (!VALID_CATEGORIES.includes(category)) {
+    return res.status(400).json({ error: `Category must be one of: ${VALID_CATEGORIES.join(", ")}` });
   }
 
   const tagArray = Array.isArray(tags)
@@ -98,8 +139,8 @@ app.post("/api/businesses", async (req, res) => {
         (name, category, description, website, city, country,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
-         instagram, facebook, linkedin)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+         instagram, facebook, linkedin, tiktok)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
       [
         name.trim(), category.trim(), description.trim(), website.trim(),
         city.trim(), (country || "AT").trim(),
@@ -108,13 +149,89 @@ app.post("/api/businesses", async (req, res) => {
         tagArray, emoji || "🏪",
         year_founded ? parseInt(year_founded, 10) : null,
         owner_name?.trim() || null, short_tagline?.trim() || null,
-        instagram?.trim() || null, facebook?.trim() || null, linkedin?.trim() || null,
+        instagram?.trim() || null, facebook?.trim() || null,
+        linkedin?.trim() || null, tiktok?.trim() || null,
       ]
     );
     res.status(201).json({ message: "Business submitted successfully! It will appear after review." });
   } catch (err) {
     console.error("POST /api/businesses error:", err.message);
     res.status(500).json({ error: "Failed to submit business" });
+  }
+});
+
+// ── API: Get reviews for a business ──
+app.get("/api/businesses/:id/reviews", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.json([]);
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, reviewer_name, rating, comment, created_at
+       FROM reviews
+       WHERE business_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("GET reviews error:", err.message);
+    res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
+// ── API: Submit a review ──
+app.post("/api/businesses/:id/reviews", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).json({ error: "Database not configured" });
+
+  const businessId = parseInt(req.params.id, 10);
+  if (isNaN(businessId)) return res.status(400).json({ error: "Invalid business ID" });
+
+  const { reviewer_name, rating, comment } = req.body;
+
+  if (!reviewer_name?.trim()) {
+    return res.status(400).json({ error: "Your name is required" });
+  }
+  const r = parseInt(rating, 10);
+  if (isNaN(r) || r < 1 || r > 5) {
+    return res.status(400).json({ error: "Rating must be between 1 and 5" });
+  }
+
+  // Verify business exists and is approved
+  try {
+    const { rows } = await pool.query(
+      "SELECT id FROM businesses WHERE id = $1 AND approved = TRUE",
+      [businessId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    await pool.query(
+      `INSERT INTO reviews (business_id, reviewer_name, rating, comment)
+       VALUES ($1, $2, $3, $4)`,
+      [businessId, reviewer_name.trim(), r, comment?.trim() || null]
+    );
+
+    // Return updated stats
+    const stats = await pool.query(
+      `SELECT ROUND(AVG(rating)::numeric, 1) AS avg_rating, COUNT(*) AS review_count
+       FROM reviews WHERE business_id = $1`,
+      [businessId]
+    );
+
+    res.status(201).json({
+      message: "Review submitted!",
+      avg_rating: parseFloat(stats.rows[0].avg_rating),
+      review_count: parseInt(stats.rows[0].review_count, 10),
+    });
+  } catch (err) {
+    console.error("POST review error:", err.message);
+    res.status(500).json({ error: "Failed to submit review" });
   }
 });
 
