@@ -181,8 +181,8 @@ app.post("/api/businesses", async (req, res) => {
         linkedin?.trim() || null, tiktok?.trim() || null,
       ]
     );
-    console.log(`Business "${name}" saved successfully`);
-    res.status(201).json({ message: "Business submitted successfully! It will appear after review." });
+    console.log(`Business "${name}" saved and live`);
+    res.status(201).json({ message: "Business listed successfully! It's now live on Zoncik." });
   } catch (err) {
     console.error("POST /api/businesses error:", err.message);
     res.status(500).json({ error: "Failed to submit business" });
