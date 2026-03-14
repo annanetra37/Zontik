@@ -65,6 +65,18 @@ async function migrate() {
     END $$;
   `);
 
+  // Ensure approved defaults to TRUE (fixes tables created with old default)
+  await p.query(`ALTER TABLE businesses ALTER COLUMN approved SET DEFAULT TRUE;`);
+
+  // Unique constraint on name + website to prevent duplicates
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD CONSTRAINT uq_business_name_website UNIQUE (name, website);
+    EXCEPTION WHEN duplicate_table THEN NULL;
+              WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
+
   await p.query(`
     CREATE TABLE IF NOT EXISTS reviews (
       id            SERIAL PRIMARY KEY,

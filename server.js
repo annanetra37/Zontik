@@ -167,8 +167,8 @@ app.post("/api/businesses", async (req, res) => {
         (name, category, description, website, city, country,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
-         instagram, facebook, linkedin, tiktok)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+         instagram, facebook, linkedin, tiktok, approved)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,TRUE)`,
       [
         name.trim(), category.trim(), description.trim(), website,
         city.trim(), (country || "").trim(),
@@ -184,6 +184,9 @@ app.post("/api/businesses", async (req, res) => {
     console.log(`Business "${name}" saved and live`);
     res.status(201).json({ message: "Business listed successfully! It's now live on Zoncik." });
   } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "A business with this name and website already exists." });
+    }
     console.error("POST /api/businesses error:", err.message);
     res.status(500).json({ error: "Failed to submit business" });
   }
