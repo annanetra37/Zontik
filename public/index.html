@@ -284,6 +284,7 @@ nav ul a:hover { color: var(--accent); }
 .card[data-category="craft"]   .card-banner { background: linear-gradient(135deg, #e8fff4, var(--mint)); }
 .card[data-category="health"]  .card-banner { background: linear-gradient(135deg, #fff0f4, var(--rose)); }
 .card[data-category="fashion"] .card-banner { background: linear-gradient(135deg, #f8f0ff, var(--lavender)); }
+.card[data-category="education"] .card-banner { background: linear-gradient(135deg, #e8fff8, #b8f0e0); }
 
 .card-emoji {
   font-size: 2.4rem;
@@ -313,6 +314,7 @@ nav ul a:hover { color: var(--accent); }
 .card[data-category="craft"]   .card-category { color: #207858; }
 .card[data-category="health"]  .card-category { color: #b04060; }
 .card[data-category="fashion"] .card-category { color: #6040b0; }
+.card[data-category="education"] .card-category { color: #2890a0; }
 
 .card-name {
   font-family: 'Fraunces', serif;
@@ -334,6 +336,7 @@ nav ul a:hover { color: var(--accent); }
 .card[data-category="craft"]   .tag { background: #edfaf4; color: #207858; border-color: #b8ecd8; }
 .card[data-category="health"]  .tag { background: #fff0f4; color: #b04060; border-color: #f8c8d8; }
 .card[data-category="fashion"] .tag { background: #f5f0ff; color: #6040b0; border-color: #d0c0f8; }
+.card[data-category="education"] .tag { background: #e8faf6; color: #2890a0; border-color: #b0e8d8; }
 
 .card-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -356,6 +359,87 @@ nav ul a:hover { color: var(--accent); }
 .card[data-category="health"]  .card-link:hover { background: #b04060; color: #fff; box-shadow: 0 4px 14px #b0406030; }
 .card[data-category="fashion"] .card-link { background: #f4f0ff; color: #6040b0; }
 .card[data-category="fashion"] .card-link:hover { background: #6040b0; color: #fff; box-shadow: 0 4px 14px #6040b030; }
+.card[data-category="education"] .card-link { background: #e8faf6; color: #2890a0; }
+.card[data-category="education"] .card-link:hover { background: #2890a0; color: #fff; box-shadow: 0 4px 14px #2890a030; }
+
+/* ── REVIEW ── */
+.card-rating {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.card-stars { font-size: 0.82rem; letter-spacing: 1px; }
+.card-rating-text { font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; }
+.card-review-btn {
+  font-family: inherit; font-size: 0.72rem; font-weight: 700;
+  color: var(--accent); background: none; border: none;
+  cursor: pointer; text-decoration: underline;
+  margin-left: auto;
+}
+.card-review-btn:hover { color: #6a5cd8; }
+
+/* Review modal */
+.review-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(28,24,48,0.55);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s, visibility 0.25s;
+}
+.review-overlay.open { opacity: 1; visibility: visible; }
+.review-modal {
+  background: var(--surface);
+  border-radius: 1.25rem;
+  width: 95vw; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(28,24,48,0.3);
+  border: 1.5px solid var(--border);
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.3s;
+}
+.review-overlay.open .review-modal { transform: translateY(0) scale(1); }
+.review-modal-header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.review-modal-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.2rem; font-weight: 700; color: var(--ink);
+}
+.review-modal-body { padding: 1.5rem 2rem 2rem; }
+.star-input {
+  display: flex; gap: 0.3rem; margin-bottom: 1rem;
+}
+.star-input button {
+  font-size: 1.6rem; background: none; border: none;
+  cursor: pointer; color: var(--border);
+  transition: color 0.1s, transform 0.1s;
+}
+.star-input button:hover { transform: scale(1.15); }
+.star-input button.lit { color: #f5a623; }
+.review-list {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  margin-top: 1.25rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  max-height: 300px; overflow-y: auto;
+}
+.review-item {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 0.75rem; padding: 0.75rem 1rem;
+}
+.review-item-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.3rem;
+}
+.review-item-name { font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+.review-item-date { font-size: 0.68rem; color: var(--ink-soft); }
+.review-item-stars { font-size: 0.75rem; margin-bottom: 0.3rem; }
+.review-item-comment { font-size: 0.82rem; color: var(--ink-mid); line-height: 1.5; }
+.review-empty {
+  text-align: center; color: var(--ink-soft);
+  font-size: 0.85rem; padding: 1rem 0;
+}
 
 /* ── CTA ── */
 .cta-wrap { width: 100%; margin: 0 auto 5rem; padding: 0 1.5rem; }
@@ -917,6 +1001,7 @@ nav ul a:hover { color: var(--accent); }
         <a href="#" onclick="heroFilterFromNav('craft');return false;">✦ Crafts & Local</a>
         <a href="#" onclick="heroFilterFromNav('health');return false;">◎ Health & Wellness</a>
         <a href="#" onclick="heroFilterFromNav('fashion');return false;">◈ Fashion</a>
+        <a href="#" onclick="heroFilterFromNav('education');return false;">🎓 Education</a>
       </div>
     </li>
     <li><a href="#about">About</a></li>
@@ -946,6 +1031,7 @@ nav ul a:hover { color: var(--accent); }
       <button class="sidebar-item" onclick="setFilter('craft',this)"><span class="si-icon">✦</span> Crafts & Local<span class="si-count">2</span></button>
       <button class="sidebar-item" onclick="setFilter('health',this)"><span class="si-icon">◎</span> Health & Wellness<span class="si-count">2</span></button>
       <button class="sidebar-item" onclick="setFilter('fashion',this)"><span class="si-icon">◈</span> Fashion<span class="si-count">1</span></button>
+      <button class="sidebar-item" onclick="setFilter('education',this)"><span class="si-icon">🎓</span> Education<span class="si-count">0</span></button>
     </div>
 
     <div class="sidebar-section">
@@ -1283,6 +1369,7 @@ nav ul a:hover { color: var(--accent); }
       <a href="#">Crafts & Local</a>
       <a href="#">Health & Wellness</a>
       <a href="#">Fashion</a>
+      <a href="#">Education</a>
     </div>
 
     <!-- Company column -->
@@ -1379,6 +1466,7 @@ nav ul a:hover { color: var(--accent); }
             <button type="button" class="cat-chip" data-cat="craft" onclick="selectCat(this)">Crafts & Local</button>
             <button type="button" class="cat-chip" data-cat="health" onclick="selectCat(this)">Health & Wellness</button>
             <button type="button" class="cat-chip" data-cat="fashion" onclick="selectCat(this)">Fashion</button>
+            <button type="button" class="cat-chip" data-cat="education" onclick="selectCat(this)">Education</button>
           </div>
         </div>
         <div class="form-group" style="margin-bottom:0.75rem">
@@ -1400,6 +1488,8 @@ nav ul a:hover { color: var(--accent); }
             <button type="button" class="emoji-opt" data-emoji="🍳" onclick="selectEmoji(this)">🍳</button>
             <button type="button" class="emoji-opt" data-emoji="💇" onclick="selectEmoji(this)">💇</button>
             <button type="button" class="emoji-opt" data-emoji="🔧" onclick="selectEmoji(this)">🔧</button>
+            <button type="button" class="emoji-opt" data-emoji="🎓" onclick="selectEmoji(this)">🎓</button>
+            <button type="button" class="emoji-opt" data-emoji="📚" onclick="selectEmoji(this)">📚</button>
           </div>
         </div>
         <div class="form-row">
@@ -1425,21 +1515,15 @@ nav ul a:hover { color: var(--accent); }
         <div class="form-section-title">Location</div>
         <div class="form-row">
           <div class="form-group">
-            <label>City <span class="req">*</span></label>
-            <input type="text" id="f_city" placeholder="e.g. Vienna" maxlength="100" />
+            <label>Country <span class="req">*</span></label>
+            <select id="f_country" onchange="populateCities()">
+              <option value="">Select country...</option>
+            </select>
           </div>
           <div class="form-group">
-            <label>Country</label>
-            <select id="f_country">
-              <option value="AT" selected>Austria</option>
-              <option value="DE">Germany</option>
-              <option value="CH">Switzerland</option>
-              <option value="IT">Italy</option>
-              <option value="CZ">Czech Republic</option>
-              <option value="HU">Hungary</option>
-              <option value="SK">Slovakia</option>
-              <option value="SI">Slovenia</option>
-              <option value="OTHER">Other</option>
+            <label>City <span class="req">*</span></label>
+            <select id="f_city">
+              <option value="">Select country first...</option>
             </select>
           </div>
         </div>
@@ -1452,7 +1536,7 @@ nav ul a:hover { color: var(--accent); }
           <div class="form-group">
             <label>Website <span class="req">*</span></label>
             <input type="url" id="f_website" placeholder="https://yourbusiness.com" />
-            <span class="form-hint">Must start with https:// or http://</span>
+            <span class="form-hint">Your business domain only — social media links not accepted</span>
           </div>
           <div class="form-group">
             <label>Contact Email <span class="req">*</span></label>
@@ -1471,7 +1555,7 @@ nav ul a:hover { color: var(--accent); }
       <!-- Section 5: Social Media -->
       <div class="form-section">
         <div class="form-section-title">Social Media (optional)</div>
-        <div class="form-row triple">
+        <div class="form-row">
           <div class="form-group">
             <label>Instagram</label>
             <input type="url" id="f_instagram" placeholder="https://instagram.com/..." />
@@ -1480,9 +1564,15 @@ nav ul a:hover { color: var(--accent); }
             <label>Facebook</label>
             <input type="url" id="f_facebook" placeholder="https://facebook.com/..." />
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>LinkedIn</label>
             <input type="url" id="f_linkedin" placeholder="https://linkedin.com/..." />
+          </div>
+          <div class="form-group">
+            <label>TikTok</label>
+            <input type="url" id="f_tiktok" placeholder="https://tiktok.com/@..." />
           </div>
         </div>
       </div>
@@ -1497,6 +1587,41 @@ nav ul a:hover { color: var(--accent); }
   </div>
 </div>
 
+<!-- REVIEW MODAL -->
+<div class="review-overlay" id="reviewOverlay">
+  <div class="review-modal">
+    <div class="review-modal-header">
+      <span class="review-modal-title" id="reviewModalTitle">Reviews</span>
+      <button class="modal-close" onclick="closeReviewModal()">&times;</button>
+    </div>
+    <div class="review-modal-body">
+      <div class="form-error-banner" id="reviewError"></div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Your Name <span class="req">*</span></label>
+        <input type="text" id="r_name" placeholder="e.g. Anna M." maxlength="100" />
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Rating <span class="req">*</span></label>
+        <div class="star-input" id="starInput">
+          <button type="button" onclick="setStarRating(1)">&#9733;</button>
+          <button type="button" onclick="setStarRating(2)">&#9733;</button>
+          <button type="button" onclick="setStarRating(3)">&#9733;</button>
+          <button type="button" onclick="setStarRating(4)">&#9733;</button>
+          <button type="button" onclick="setStarRating(5)">&#9733;</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Comment</label>
+        <textarea id="r_comment" placeholder="Share your experience..." maxlength="1000" style="min-height:60px"></textarea>
+      </div>
+      <button class="btn-submit" id="btnReview" onclick="submitReview()" style="width:100%">Submit Review</button>
+      <div class="review-list" id="reviewList">
+        <div class="review-empty">Loading reviews...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   let activeFilter = 'all';
 
@@ -1506,10 +1631,135 @@ nav ul a:hover { color: var(--accent); }
     tech: 'Tech & Services',
     craft: 'Crafts & Local',
     health: 'Health & Wellness',
-    fashion: 'Fashion'
+    fashion: 'Fashion',
+    education: 'Education'
   };
 
-  const categoryEmojis = { food: '🛒', tech: '⚡', craft: '✦', health: '◎', fashion: '◈' };
+  const categoryEmojis = { food: '🛒', tech: '⚡', craft: '✦', health: '◎', fashion: '◈', education: '🎓' };
+
+  // ── Country → City data ──
+  const countryCities = {
+    AT: { name: 'Austria', cities: ['Vienna','Graz','Linz','Salzburg','Innsbruck','Klagenfurt','Villach','Wels','Sankt Polten','Dornbirn'] },
+    DE: { name: 'Germany', cities: ['Berlin','Munich','Hamburg','Frankfurt','Cologne','Stuttgart','Dusseldorf','Leipzig','Dortmund','Essen','Bremen','Dresden','Hanover','Nuremberg'] },
+    CH: { name: 'Switzerland', cities: ['Zurich','Geneva','Basel','Bern','Lausanne','Winterthur','Lucerne','St. Gallen','Lugano','Biel'] },
+    GB: { name: 'United Kingdom', cities: ['London','Manchester','Birmingham','Leeds','Glasgow','Edinburgh','Liverpool','Bristol','Sheffield','Newcastle'] },
+    FR: { name: 'France', cities: ['Paris','Marseille','Lyon','Toulouse','Nice','Nantes','Strasbourg','Montpellier','Bordeaux','Lille'] },
+    IT: { name: 'Italy', cities: ['Rome','Milan','Naples','Turin','Palermo','Genoa','Bologna','Florence','Bari','Venice'] },
+    ES: { name: 'Spain', cities: ['Madrid','Barcelona','Valencia','Seville','Zaragoza','Malaga','Murcia','Palma','Bilbao','Alicante'] },
+    PT: { name: 'Portugal', cities: ['Lisbon','Porto','Amadora','Braga','Funchal','Coimbra','Setubal','Almada','Aveiro','Faro'] },
+    NL: { name: 'Netherlands', cities: ['Amsterdam','Rotterdam','The Hague','Utrecht','Eindhoven','Groningen','Tilburg','Almere','Breda','Nijmegen'] },
+    BE: { name: 'Belgium', cities: ['Brussels','Antwerp','Ghent','Charleroi','Liege','Bruges','Namur','Leuven','Mechelen','Aalst'] },
+    PL: { name: 'Poland', cities: ['Warsaw','Krakow','Lodz','Wroclaw','Poznan','Gdansk','Szczecin','Bydgoszcz','Lublin','Katowice'] },
+    CZ: { name: 'Czech Republic', cities: ['Prague','Brno','Ostrava','Plzen','Liberec','Olomouc','Ceske Budejovice','Hradec Kralove','Pardubice','Usti nad Labem'] },
+    SE: { name: 'Sweden', cities: ['Stockholm','Gothenburg','Malmo','Uppsala','Vasteras','Orebro','Linkoping','Helsingborg','Norrkoping','Jonkoping'] },
+    NO: { name: 'Norway', cities: ['Oslo','Bergen','Trondheim','Stavanger','Drammen','Fredrikstad','Kristiansand','Sandnes','Tromso','Sarpsborg'] },
+    DK: { name: 'Denmark', cities: ['Copenhagen','Aarhus','Odense','Aalborg','Esbjerg','Randers','Kolding','Horsens','Vejle','Roskilde'] },
+    FI: { name: 'Finland', cities: ['Helsinki','Espoo','Tampere','Vantaa','Oulu','Turku','Jyvaskyla','Lahti','Kuopio','Kouvola'] },
+    IE: { name: 'Ireland', cities: ['Dublin','Cork','Limerick','Galway','Waterford','Drogheda','Swords','Dundalk','Navan','Kilkenny'] },
+    HU: { name: 'Hungary', cities: ['Budapest','Debrecen','Szeged','Miskolc','Pecs','Gyor','Nyiregyhaza','Kecskemet','Szekesfehervar','Szombathely'] },
+    RO: { name: 'Romania', cities: ['Bucharest','Cluj-Napoca','Timisoara','Iasi','Constanta','Craiova','Brasov','Galati','Ploiesti','Oradea'] },
+    BG: { name: 'Bulgaria', cities: ['Sofia','Plovdiv','Varna','Burgas','Ruse','Stara Zagora','Pleven','Sliven','Dobrich','Shumen'] },
+    HR: { name: 'Croatia', cities: ['Zagreb','Split','Rijeka','Osijek','Zadar','Pula','Slavonski Brod','Karlovac','Varazdin','Sibenik'] },
+    SK: { name: 'Slovakia', cities: ['Bratislava','Kosice','Presov','Zilina','Banska Bystrica','Nitra','Trnava','Trencin','Martin','Poprad'] },
+    SI: { name: 'Slovenia', cities: ['Ljubljana','Maribor','Celje','Kranj','Koper','Velenje','Novo Mesto','Ptuj','Kamnik','Jesenice'] },
+    GR: { name: 'Greece', cities: ['Athens','Thessaloniki','Patras','Heraklion','Larissa','Volos','Ioannina','Kavala','Rhodes','Chania'] },
+    LT: { name: 'Lithuania', cities: ['Vilnius','Kaunas','Klaipeda','Siauliai','Panevezys','Alytus','Marijampole','Mazeikiai','Jonava','Utena'] },
+    LV: { name: 'Latvia', cities: ['Riga','Daugavpils','Liepaja','Jelgava','Jurmala','Ventspils','Rezekne','Valmiera','Jekabpils','Ogre'] },
+    EE: { name: 'Estonia', cities: ['Tallinn','Tartu','Narva','Parnu','Kohtla-Jarve','Viljandi','Rakvere','Maardu','Sillamae','Kuressaare'] },
+    US: { name: 'United States', cities: ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','San Jose','Austin','Jacksonville','San Francisco','Seattle','Denver','Boston','Miami','Atlanta'] },
+    CA: { name: 'Canada', cities: ['Toronto','Montreal','Vancouver','Calgary','Edmonton','Ottawa','Winnipeg','Quebec City','Hamilton','Halifax'] },
+    AU: { name: 'Australia', cities: ['Sydney','Melbourne','Brisbane','Perth','Adelaide','Gold Coast','Canberra','Newcastle','Hobart','Darwin'] },
+    IN: { name: 'India', cities: ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow'] },
+    JP: { name: 'Japan', cities: ['Tokyo','Osaka','Yokohama','Nagoya','Sapporo','Kobe','Kyoto','Fukuoka','Kawasaki','Sendai'] },
+    BR: { name: 'Brazil', cities: ['Sao Paulo','Rio de Janeiro','Brasilia','Salvador','Fortaleza','Belo Horizonte','Manaus','Curitiba','Recife','Porto Alegre'] },
+    MX: { name: 'Mexico', cities: ['Mexico City','Guadalajara','Monterrey','Puebla','Tijuana','Leon','Ciudad Juarez','Zapopan','Merida','Cancun'] },
+    ZA: { name: 'South Africa', cities: ['Johannesburg','Cape Town','Durban','Pretoria','Port Elizabeth','Bloemfontein','East London','Nelspruit','Polokwane','Pietermaritzburg'] },
+    AE: { name: 'UAE', cities: ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain','Al Ain'] },
+    SG: { name: 'Singapore', cities: ['Singapore'] },
+    KR: { name: 'South Korea', cities: ['Seoul','Busan','Incheon','Daegu','Daejeon','Gwangju','Suwon','Ulsan','Changwon','Seongnam'] },
+    TR: { name: 'Turkey', cities: ['Istanbul','Ankara','Izmir','Bursa','Antalya','Adana','Gaziantep','Konya','Mersin','Kayseri'] },
+    IL: { name: 'Israel', cities: ['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beer Sheva','Holon','Bnei Brak'] },
+    NZ: { name: 'New Zealand', cities: ['Auckland','Wellington','Christchurch','Hamilton','Tauranga','Dunedin','Palmerston North','Napier','Nelson','Rotorua'] },
+    PH: { name: 'Philippines', cities: ['Manila','Quezon City','Davao','Cebu City','Zamboanga','Taguig','Antipolo','Pasig','Cagayan de Oro','Makati'] },
+    TH: { name: 'Thailand', cities: ['Bangkok','Chiang Mai','Pattaya','Nonthaburi','Nakhon Ratchasima','Hat Yai','Udon Thani','Khon Kaen','Phuket','Chiang Rai'] },
+    MY: { name: 'Malaysia', cities: ['Kuala Lumpur','George Town','Johor Bahru','Ipoh','Shah Alam','Petaling Jaya','Kuching','Kota Kinabalu','Malacca','Subang Jaya'] },
+    NG: { name: 'Nigeria', cities: ['Lagos','Abuja','Kano','Ibadan','Port Harcourt','Benin City','Kaduna','Maiduguri','Zaria','Aba'] },
+    KE: { name: 'Kenya', cities: ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Malindi','Kitale','Garissa','Nyeri'] },
+    EG: { name: 'Egypt', cities: ['Cairo','Alexandria','Giza','Shubra El Kheima','Port Said','Suez','Mansoura','Tanta','Asyut','Ismailia'] },
+    CO: { name: 'Colombia', cities: ['Bogota','Medellin','Cali','Barranquilla','Cartagena','Cucuta','Bucaramanga','Pereira','Santa Marta','Ibague'] },
+    AR: { name: 'Argentina', cities: ['Buenos Aires','Cordoba','Rosario','Mendoza','La Plata','San Miguel de Tucuman','Mar del Plata','Salta','Santa Fe','Neuquen'] },
+    CL: { name: 'Chile', cities: ['Santiago','Valparaiso','Concepcion','La Serena','Antofagasta','Temuco','Rancagua','Iquique','Talca','Arica'] },
+  };
+
+  // Blocked social media domains for website field
+  const SOCIAL_DOMAINS = ['instagram.com','facebook.com','fb.com','twitter.com','x.com','tiktok.com','linkedin.com','youtube.com','youtu.be','pinterest.com','snapchat.com','reddit.com','tumblr.com','threads.net'];
+
+  function isSocialUrl(url) {
+    try {
+      const h = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+      return SOCIAL_DOMAINS.some(d => h === d || h.endsWith('.' + d));
+    } catch { return false; }
+  }
+
+  // ── Populate country dropdown ──
+  function initCountryDropdown() {
+    const sel = document.getElementById('f_country');
+    const sorted = Object.entries(countryCities).sort((a, b) => a[1].name.localeCompare(b[1].name));
+    sorted.forEach(([code, data]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = data.name;
+      if (code === 'AT') opt.selected = true;
+      sel.appendChild(opt);
+    });
+    populateCities();
+  }
+
+  function populateCities() {
+    const countryCode = document.getElementById('f_country').value;
+    const citySel = document.getElementById('f_city');
+    citySel.innerHTML = '';
+    if (!countryCode || !countryCities[countryCode]) {
+      citySel.innerHTML = '<option value="">Select country first...</option>';
+      return;
+    }
+    const cities = countryCities[countryCode].cities;
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySel.appendChild(opt);
+    });
+    // Add "Other" option for manual entry
+    const other = document.createElement('option');
+    other.value = '__other__';
+    other.textContent = '— Other (type below) —';
+    citySel.appendChild(other);
+
+    citySel.onchange = function() {
+      if (this.value === '__other__') {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'f_city_custom';
+        input.placeholder = 'Type your city...';
+        input.maxLength = 100;
+        input.style.marginTop = '0.5rem';
+        this.parentElement.appendChild(input);
+      } else {
+        const custom = document.getElementById('f_city_custom');
+        if (custom) custom.remove();
+      }
+    };
+  }
+
+  function getSelectedCity() {
+    const sel = document.getElementById('f_city');
+    if (sel.value === '__other__') {
+      const custom = document.getElementById('f_city_custom');
+      return custom ? custom.value.trim() : '';
+    }
+    return sel.value;
+  }
 
   function setFilter(cat, btn) {
     activeFilter = cat;
@@ -1551,6 +1801,14 @@ nav ul a:hover { color: var(--accent); }
     document.getElementById('sectionTitle').textContent = categoryNames[activeFilter] || 'All Businesses';
   }
 
+  // ── Star rendering helpers ──
+  function starsHtml(rating) {
+    const full = Math.round(rating);
+    let s = '';
+    for (let i = 1; i <= 5; i++) s += i <= full ? '&#9733;' : '&#9734;';
+    return s;
+  }
+
   // ── Load businesses from API and append as cards ──
   async function loadBusinesses() {
     try {
@@ -1561,6 +1819,18 @@ nav ul a:hover { color: var(--accent); }
       businesses.forEach(b => {
         const tags = (b.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
         const featured = b.featured ? '<span class="badge-featured">★ Featured</span>' : '';
+        const avgRating = parseFloat(b.avg_rating) || 0;
+        const reviewCount = parseInt(b.review_count) || 0;
+        const ratingHtml = reviewCount > 0
+          ? `<div class="card-rating">
+               <span class="card-stars">${starsHtml(avgRating)}</span>
+               <span class="card-rating-text">${avgRating} (${reviewCount})</span>
+               <button class="card-review-btn" onclick="openReviewModal(${b.id}, '${esc(b.name).replace(/'/g, "\\'")}')">Write review</button>
+             </div>`
+          : `<div class="card-rating">
+               <span class="card-rating-text">No reviews yet</span>
+               <button class="card-review-btn" onclick="openReviewModal(${b.id}, '${esc(b.name).replace(/'/g, "\\'")}')">Be the first!</button>
+             </div>`;
         const card = document.createElement('div');
         card.className = 'card';
         card.dataset.category = b.category;
@@ -1571,6 +1841,7 @@ nav ul a:hover { color: var(--accent); }
           <div class="card-body">
             <div class="card-category">${esc(categoryNames[b.category] || b.category)}</div>
             <div class="card-name">${esc(b.name)}</div>
+            ${ratingHtml}
             <div class="card-desc">${esc(b.description)}</div>
             <div class="card-tags">${tags}</div>
             <div class="card-footer">
@@ -1590,7 +1861,7 @@ nav ul a:hover { color: var(--accent); }
     return d.innerHTML;
   }
 
-  // ── Modal ──
+  // ── Listing Modal ──
   function openModal() {
     document.getElementById('listModal').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -1599,14 +1870,109 @@ nav ul a:hover { color: var(--accent); }
     document.getElementById('listModal').classList.remove('open');
     document.body.style.overflow = '';
   }
-  // close on overlay click
   document.getElementById('listModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
-  // close on Escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeReviewModal(); }
   });
+
+  // ── Review Modal ──
+  let currentReviewBizId = null;
+  let selectedRating = 0;
+
+  function openReviewModal(bizId, bizName) {
+    currentReviewBizId = bizId;
+    selectedRating = 0;
+    document.getElementById('reviewModalTitle').textContent = `Reviews — ${bizName}`;
+    document.getElementById('r_name').value = '';
+    document.getElementById('r_comment').value = '';
+    document.getElementById('reviewError').style.display = 'none';
+    document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
+    document.getElementById('reviewOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    loadReviews(bizId);
+  }
+  function closeReviewModal() {
+    document.getElementById('reviewOverlay').classList.remove('open');
+    if (!document.getElementById('listModal').classList.contains('open')) {
+      document.body.style.overflow = '';
+    }
+  }
+  document.getElementById('reviewOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeReviewModal();
+  });
+
+  function setStarRating(n) {
+    selectedRating = n;
+    document.querySelectorAll('#starInput button').forEach((b, i) => {
+      b.classList.toggle('lit', i < n);
+    });
+  }
+
+  async function loadReviews(bizId) {
+    const list = document.getElementById('reviewList');
+    list.innerHTML = '<div class="review-empty">Loading...</div>';
+    try {
+      const res = await fetch(`/api/businesses/${bizId}/reviews`);
+      const reviews = await res.json();
+      if (!reviews.length) {
+        list.innerHTML = '<div class="review-empty">No reviews yet. Be the first to share your experience!</div>';
+        return;
+      }
+      list.innerHTML = reviews.map(r => `
+        <div class="review-item">
+          <div class="review-item-header">
+            <span class="review-item-name">${esc(r.reviewer_name)}</span>
+            <span class="review-item-date">${new Date(r.created_at).toLocaleDateString()}</span>
+          </div>
+          <div class="review-item-stars">${starsHtml(r.rating)}</div>
+          ${r.comment ? `<div class="review-item-comment">${esc(r.comment)}</div>` : ''}
+        </div>
+      `).join('');
+    } catch {
+      list.innerHTML = '<div class="review-empty">Could not load reviews</div>';
+    }
+  }
+
+  async function submitReview() {
+    const errBanner = document.getElementById('reviewError');
+    errBanner.style.display = 'none';
+    const name = document.getElementById('r_name').value.trim();
+    if (!name) { errBanner.textContent = 'Please enter your name'; errBanner.style.display = 'block'; return; }
+    if (!selectedRating) { errBanner.textContent = 'Please select a rating'; errBanner.style.display = 'block'; return; }
+
+    const btn = document.getElementById('btnReview');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    try {
+      const res = await fetch(`/api/businesses/${currentReviewBizId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reviewer_name: name,
+          rating: selectedRating,
+          comment: document.getElementById('r_comment').value.trim() || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errBanner.textContent = data.error || 'Something went wrong';
+        errBanner.style.display = 'block';
+      } else {
+        document.getElementById('r_name').value = '';
+        document.getElementById('r_comment').value = '';
+        selectedRating = 0;
+        document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
+        loadReviews(currentReviewBizId);
+      }
+    } catch {
+      errBanner.textContent = 'Network error — please try again';
+      errBanner.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Submit Review';
+  }
 
   // ── Form selection helpers ──
   let selectedCat = '';
@@ -1634,20 +2000,20 @@ nav ul a:hover { color: var(--accent); }
     const errBanner = document.getElementById('formError');
     errBanner.style.display = 'none';
 
-    // Collect values
     const name = document.getElementById('f_name').value.trim();
     const description = document.getElementById('f_desc').value.trim();
     const website = document.getElementById('f_website').value.trim();
     const email = document.getElementById('f_email').value.trim();
-    const city = document.getElementById('f_city').value.trim();
+    const city = getSelectedCity();
+    const country = document.getElementById('f_country').value;
 
-    // Client-side validation
     const errs = [];
     if (!name) errs.push('Business Name');
     if (!selectedCat) errs.push('Category');
     if (!description) errs.push('Description');
     if (!website) errs.push('Website');
     if (!email) errs.push('Contact Email');
+    if (!country) errs.push('Country');
     if (!city) errs.push('City');
 
     if (errs.length) {
@@ -1659,6 +2025,11 @@ nav ul a:hover { color: var(--accent); }
 
     if (!/^https?:\/\/.+/i.test(website)) {
       errBanner.textContent = 'Website must start with https:// or http://';
+      errBanner.style.display = 'block';
+      return;
+    }
+    if (isSocialUrl(website)) {
+      errBanner.textContent = 'Please enter your business domain, not a social media page. Add social links in the Social Media section below.';
       errBanner.style.display = 'block';
       return;
     }
@@ -1674,7 +2045,7 @@ nav ul a:hover { color: var(--accent); }
       description,
       website,
       city,
-      country: document.getElementById('f_country').value,
+      country,
       contact_email: email,
       contact_phone: document.getElementById('f_phone').value.trim() || null,
       price_range: selectedPrice,
@@ -1686,6 +2057,7 @@ nav ul a:hover { color: var(--accent); }
       instagram: document.getElementById('f_instagram').value.trim() || null,
       facebook: document.getElementById('f_facebook').value.trim() || null,
       linkedin: document.getElementById('f_linkedin').value.trim() || null,
+      tiktok: document.getElementById('f_tiktok').value.trim() || null,
     };
 
     const btn = document.getElementById('btnSubmit');
@@ -1707,7 +2079,6 @@ nav ul a:hover { color: var(--accent); }
         return;
       }
 
-      // Show success state
       document.getElementById('modalBody').innerHTML = `
         <div class="form-success">
           <div class="form-success-icon">🎉</div>
@@ -1726,6 +2097,7 @@ nav ul a:hover { color: var(--accent); }
   }
 
   // ── Init ──
+  initCountryDropdown();
   loadBusinesses();
 </script>
 </body>
