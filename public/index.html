@@ -440,6 +440,11 @@ nav ul a:hover { color: var(--accent); }
   text-align: center; color: var(--ink-soft);
   font-size: 0.85rem; padding: 1rem 0;
 }
+.review-item-photo {
+  margin-top: 0.5rem; border-radius: 0.5rem;
+  max-width: 100%; max-height: 200px;
+  object-fit: cover; border: 1px solid var(--border);
+}
 
 /* ── CTA ── */
 .cta-wrap { width: 100%; margin: 0 auto 5rem; padding: 0 1.5rem; }
@@ -1490,6 +1495,11 @@ nav ul a:hover { color: var(--accent); }
         <label>Comment</label>
         <textarea id="r_comment" placeholder="Share your experience..." maxlength="1000" style="min-height:60px"></textarea>
       </div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Photo (optional)</label>
+        <input type="file" id="r_photo" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:0.85rem" />
+        <span class="form-hint">Max 5MB — JPEG, PNG, GIF, or WebP</span>
+      </div>
       <button class="btn-submit" id="btnReview" onclick="submitReview()" style="width:100%">Submit Review</button>
       <div class="review-list" id="reviewList">
         <div class="review-empty">Loading reviews...</div>
@@ -1612,6 +1622,7 @@ nav ul a:hover { color: var(--accent); }
   }
 
   let activeLocation = 'all';
+  let activeRatingFilter = 0;
 
   function setFilter(cat, btn) {
     activeFilter = cat;
@@ -1629,6 +1640,14 @@ nav ul a:hover { color: var(--accent); }
 
   function togglePrice(btn) {
     btn.classList.toggle('active');
+    filterCards();
+  }
+
+  function setRatingFilter(min, btn) {
+    activeRatingFilter = min;
+    btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterCards();
   }
 
   function heroFilterFromNav(cat) {
@@ -1644,12 +1663,23 @@ nav ul a:hover { color: var(--accent); }
   function filterCards() {
     const q = document.getElementById('searchInput').value.toLowerCase();
     const cards = document.querySelectorAll('.card');
+
+    // Get active price chips
+    const activePrices = [];
+    document.querySelectorAll('.price-chip.active').forEach(chip => activePrices.push(chip.textContent.trim()));
+    const priceFilterActive = activePrices.length > 0 && activePrices.length < 4;
+
+    // Get active rating filter
+    const minRating = activeRatingFilter;
+
     let visible = 0;
     cards.forEach(card => {
       const catOk = activeFilter === 'all' || card.dataset.category === activeFilter;
       const locOk = activeLocation === 'all' || card.dataset.city === activeLocation;
       const searchOk = !q || card.dataset.name.toLowerCase().includes(q) || card.dataset.tags.toLowerCase().includes(q);
-      const show = catOk && locOk && searchOk;
+      const priceOk = !priceFilterActive || activePrices.includes(card.dataset.price);
+      const ratingOk = !minRating || parseFloat(card.dataset.rating) >= minRating;
+      const show = catOk && locOk && searchOk && priceOk && ratingOk;
       card.classList.toggle('hidden', !show);
       if (show) { visible++; card.style.animationDelay = (visible * 0.05) + 's'; }
     });
@@ -1695,6 +1725,32 @@ nav ul a:hover { color: var(--accent); }
       locHtml += `<button class="sidebar-item" onclick="setLocation('${esc(city).replace(/'/g, "\\'")}',this)"><span class="si-icon">📍</span> ${esc(city)}<span class="si-count">${count}</span></button>`;
     });
     locSection.innerHTML = locHtml;
+
+    // Rating filter section — only show if there are reviewed businesses
+    const hasReviews = businesses.some(b => parseFloat(b.review_count) > 0);
+    let ratingSection = document.getElementById('sidebarRating');
+    if (hasReviews) {
+      if (!ratingSection) {
+        ratingSection = document.createElement('div');
+        ratingSection.className = 'sidebar-section';
+        ratingSection.id = 'sidebarRating';
+        // Insert before price range section
+        const priceSection = document.querySelector('.sidebar-section:has(.price-chips)');
+        if (priceSection) priceSection.parentNode.insertBefore(ratingSection, priceSection);
+        else document.querySelector('.sidebar').appendChild(ratingSection);
+      }
+      let rHtml = '<div class="sidebar-heading">Rating</div>';
+      rHtml += `<button class="sidebar-item active" onclick="setRatingFilter(0,this)"><span class="si-icon">★</span> Any rating</button>`;
+      [4, 3, 2].forEach(n => {
+        const count = businesses.filter(b => parseFloat(b.avg_rating) >= n).length;
+        if (count > 0) {
+          rHtml += `<button class="sidebar-item" onclick="setRatingFilter(${n},this)"><span class="si-icon">★</span> ${n}+ stars<span class="si-count">${count}</span></button>`;
+        }
+      });
+      ratingSection.innerHTML = rHtml;
+    } else if (ratingSection) {
+      ratingSection.remove();
+    }
   }
 
   // ── Star rendering helpers ──
@@ -1733,6 +1789,8 @@ nav ul a:hover { color: var(--accent); }
         card.dataset.name = b.name;
         card.dataset.tags = (b.tags || []).join(' ');
         card.dataset.city = b.city || '';
+        card.dataset.price = b.price_range || '€';
+        card.dataset.rating = avgRating.toString();
         card.innerHTML = `
           <div class="card-banner"><div class="card-emoji">${esc(b.emoji || '🏪')}</div>${featured}</div>
           <div class="card-body">
@@ -1786,6 +1844,7 @@ nav ul a:hover { color: var(--accent); }
     document.getElementById('r_name').value = '';
     document.getElementById('r_comment').value = '';
     document.getElementById('reviewError').style.display = 'none';
+    document.getElementById('r_photo').value = '';
     document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
     document.getElementById('reviewOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -1826,6 +1885,7 @@ nav ul a:hover { color: var(--accent); }
           </div>
           <div class="review-item-stars">${starsHtml(r.rating)}</div>
           ${r.comment ? `<div class="review-item-comment">${esc(r.comment)}</div>` : ''}
+          ${r.photo ? `<img class="review-item-photo" src="${esc(r.photo)}" alt="Review photo" loading="lazy" />` : ''}
         </div>
       `).join('');
     } catch {
@@ -1844,14 +1904,16 @@ nav ul a:hover { color: var(--accent); }
     btn.disabled = true;
     btn.textContent = 'Submitting...';
     try {
+      const formData = new FormData();
+      formData.append('reviewer_name', name);
+      formData.append('rating', selectedRating);
+      formData.append('comment', document.getElementById('r_comment').value.trim() || '');
+      const photoInput = document.getElementById('r_photo');
+      if (photoInput.files.length) formData.append('photo', photoInput.files[0]);
+
       const res = await fetch(`/api/businesses/${currentReviewBizId}/reviews`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reviewer_name: name,
-          rating: selectedRating,
-          comment: document.getElementById('r_comment').value.trim() || null,
-        }),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1860,6 +1922,7 @@ nav ul a:hover { color: var(--accent); }
       } else {
         document.getElementById('r_name').value = '';
         document.getElementById('r_comment').value = '';
+        photoInput.value = '';
         selectedRating = 0;
         document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
         loadReviews(currentReviewBizId);

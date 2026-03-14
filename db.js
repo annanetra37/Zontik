@@ -68,10 +68,33 @@ async function migrate() {
   // Ensure approved defaults to TRUE (fixes tables created with old default)
   await p.query(`ALTER TABLE businesses ALTER COLUMN approved SET DEFAULT TRUE;`);
 
-  // Unique constraint on name + website to prevent duplicates
+  // Add website_domain column for domain-based uniqueness
   await p.query(`
     DO $$ BEGIN
-      ALTER TABLE businesses ADD CONSTRAINT uq_business_name_website UNIQUE (name, website);
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS website_domain VARCHAR(500);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
+  // Backfill website_domain for existing rows
+  await p.query(`
+    UPDATE businesses
+    SET website_domain = LOWER(REGEXP_REPLACE(REGEXP_REPLACE(website, '^https?://', ''), '^www\\.', ''))
+    WHERE website_domain IS NULL AND website IS NOT NULL;
+  `);
+
+  // Drop old name+website constraint if it exists
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses DROP CONSTRAINT IF EXISTS uq_business_name_website;
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
+  // Unique constraint on website_domain to prevent duplicates
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD CONSTRAINT uq_business_domain UNIQUE (website_domain);
     EXCEPTION WHEN duplicate_table THEN NULL;
               WHEN duplicate_object THEN NULL;
     END $$;
@@ -90,6 +113,14 @@ async function migrate() {
 
   await p.query(`
     CREATE INDEX IF NOT EXISTS idx_reviews_business_id ON reviews(business_id);
+  `);
+
+  // Add photo column to reviews if missing
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE reviews ADD COLUMN IF NOT EXISTS photo VARCHAR(500);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
   `);
 
   console.log("Database migration complete");
