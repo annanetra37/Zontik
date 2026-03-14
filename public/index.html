@@ -1768,6 +1768,17 @@ nav ul a:hover { color: var(--accent); }
       if (!res.ok) return;
       const businesses = await res.json();
       const grid = document.getElementById('cardGrid');
+      if (!businesses.length) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🏪</div>
+            <h3 style="color:var(--ink);margin-bottom:0.5rem;">No businesses listed yet</h3>
+            <p style="color:var(--ink-soft);margin-bottom:1.5rem;">Be the first to add your brand to Zoncik!</p>
+            <button onclick="openModal()" style="background:var(--accent);color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:999px;font-weight:700;cursor:pointer;">+ List Your Business</button>
+          </div>`;
+        document.getElementById('countLabel').textContent = '0 businesses';
+        return;
+      }
       businesses.forEach(b => {
         const tags = (b.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
         const featured = b.featured ? '<span class="badge-featured">★ Featured</span>' : '';
