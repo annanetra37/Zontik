@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "seed": "node seed.js"
+    "dev": "node server.js"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

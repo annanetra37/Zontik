@@ -123,6 +123,20 @@ async function migrate() {
     END $$;
   `);
 
+  // One-time cleanup: remove seed/example businesses
+  const SEED_DOMAINS = [
+    "thespiceroute.at", "pixelsmith.de", "atelierloom.at",
+    "verdurewellness.at", "foldandform.at", "claritybookkeeping.at",
+    "morningroast.at", "woodcraftco.at", "mindspacestudio.at",
+  ];
+  const del = await p.query(
+    "DELETE FROM businesses WHERE website_domain = ANY($1::text[])",
+    [SEED_DOMAINS]
+  );
+  if (del.rowCount > 0) {
+    console.log(`Removed ${del.rowCount} seed/example business(es)`);
+  }
+
   console.log("Database migration complete");
 }
 
