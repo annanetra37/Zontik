@@ -1536,7 +1536,7 @@ nav ul a:hover { color: var(--accent); }
           <div class="form-group">
             <label>Website <span class="req">*</span></label>
             <input type="url" id="f_website" placeholder="https://yourbusiness.com" />
-            <span class="form-hint">Your business domain only — social media links not accepted</span>
+            <span class="form-hint">Your business domain only (e.g. mybusiness.com) — social media links not accepted</span>
           </div>
           <div class="form-group">
             <label>Contact Email <span class="req">*</span></label>
@@ -1637,126 +1637,100 @@ nav ul a:hover { color: var(--accent); }
 
   const categoryEmojis = { food: '🛒', tech: '⚡', craft: '✦', health: '◎', fashion: '◈', education: '🎓' };
 
-  // ── Country → City data ──
-  const countryCities = {
-    AT: { name: 'Austria', cities: ['Vienna','Graz','Linz','Salzburg','Innsbruck','Klagenfurt','Villach','Wels','Sankt Polten','Dornbirn'] },
-    DE: { name: 'Germany', cities: ['Berlin','Munich','Hamburg','Frankfurt','Cologne','Stuttgart','Dusseldorf','Leipzig','Dortmund','Essen','Bremen','Dresden','Hanover','Nuremberg'] },
-    CH: { name: 'Switzerland', cities: ['Zurich','Geneva','Basel','Bern','Lausanne','Winterthur','Lucerne','St. Gallen','Lugano','Biel'] },
-    GB: { name: 'United Kingdom', cities: ['London','Manchester','Birmingham','Leeds','Glasgow','Edinburgh','Liverpool','Bristol','Sheffield','Newcastle'] },
-    FR: { name: 'France', cities: ['Paris','Marseille','Lyon','Toulouse','Nice','Nantes','Strasbourg','Montpellier','Bordeaux','Lille'] },
-    IT: { name: 'Italy', cities: ['Rome','Milan','Naples','Turin','Palermo','Genoa','Bologna','Florence','Bari','Venice'] },
-    ES: { name: 'Spain', cities: ['Madrid','Barcelona','Valencia','Seville','Zaragoza','Malaga','Murcia','Palma','Bilbao','Alicante'] },
-    PT: { name: 'Portugal', cities: ['Lisbon','Porto','Amadora','Braga','Funchal','Coimbra','Setubal','Almada','Aveiro','Faro'] },
-    NL: { name: 'Netherlands', cities: ['Amsterdam','Rotterdam','The Hague','Utrecht','Eindhoven','Groningen','Tilburg','Almere','Breda','Nijmegen'] },
-    BE: { name: 'Belgium', cities: ['Brussels','Antwerp','Ghent','Charleroi','Liege','Bruges','Namur','Leuven','Mechelen','Aalst'] },
-    PL: { name: 'Poland', cities: ['Warsaw','Krakow','Lodz','Wroclaw','Poznan','Gdansk','Szczecin','Bydgoszcz','Lublin','Katowice'] },
-    CZ: { name: 'Czech Republic', cities: ['Prague','Brno','Ostrava','Plzen','Liberec','Olomouc','Ceske Budejovice','Hradec Kralove','Pardubice','Usti nad Labem'] },
-    SE: { name: 'Sweden', cities: ['Stockholm','Gothenburg','Malmo','Uppsala','Vasteras','Orebro','Linkoping','Helsingborg','Norrkoping','Jonkoping'] },
-    NO: { name: 'Norway', cities: ['Oslo','Bergen','Trondheim','Stavanger','Drammen','Fredrikstad','Kristiansand','Sandnes','Tromso','Sarpsborg'] },
-    DK: { name: 'Denmark', cities: ['Copenhagen','Aarhus','Odense','Aalborg','Esbjerg','Randers','Kolding','Horsens','Vejle','Roskilde'] },
-    FI: { name: 'Finland', cities: ['Helsinki','Espoo','Tampere','Vantaa','Oulu','Turku','Jyvaskyla','Lahti','Kuopio','Kouvola'] },
-    IE: { name: 'Ireland', cities: ['Dublin','Cork','Limerick','Galway','Waterford','Drogheda','Swords','Dundalk','Navan','Kilkenny'] },
-    HU: { name: 'Hungary', cities: ['Budapest','Debrecen','Szeged','Miskolc','Pecs','Gyor','Nyiregyhaza','Kecskemet','Szekesfehervar','Szombathely'] },
-    RO: { name: 'Romania', cities: ['Bucharest','Cluj-Napoca','Timisoara','Iasi','Constanta','Craiova','Brasov','Galati','Ploiesti','Oradea'] },
-    BG: { name: 'Bulgaria', cities: ['Sofia','Plovdiv','Varna','Burgas','Ruse','Stara Zagora','Pleven','Sliven','Dobrich','Shumen'] },
-    HR: { name: 'Croatia', cities: ['Zagreb','Split','Rijeka','Osijek','Zadar','Pula','Slavonski Brod','Karlovac','Varazdin','Sibenik'] },
-    SK: { name: 'Slovakia', cities: ['Bratislava','Kosice','Presov','Zilina','Banska Bystrica','Nitra','Trnava','Trencin','Martin','Poprad'] },
-    SI: { name: 'Slovenia', cities: ['Ljubljana','Maribor','Celje','Kranj','Koper','Velenje','Novo Mesto','Ptuj','Kamnik','Jesenice'] },
-    GR: { name: 'Greece', cities: ['Athens','Thessaloniki','Patras','Heraklion','Larissa','Volos','Ioannina','Kavala','Rhodes','Chania'] },
-    LT: { name: 'Lithuania', cities: ['Vilnius','Kaunas','Klaipeda','Siauliai','Panevezys','Alytus','Marijampole','Mazeikiai','Jonava','Utena'] },
-    LV: { name: 'Latvia', cities: ['Riga','Daugavpils','Liepaja','Jelgava','Jurmala','Ventspils','Rezekne','Valmiera','Jekabpils','Ogre'] },
-    EE: { name: 'Estonia', cities: ['Tallinn','Tartu','Narva','Parnu','Kohtla-Jarve','Viljandi','Rakvere','Maardu','Sillamae','Kuressaare'] },
-    US: { name: 'United States', cities: ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','San Jose','Austin','Jacksonville','San Francisco','Seattle','Denver','Boston','Miami','Atlanta'] },
-    CA: { name: 'Canada', cities: ['Toronto','Montreal','Vancouver','Calgary','Edmonton','Ottawa','Winnipeg','Quebec City','Hamilton','Halifax'] },
-    AU: { name: 'Australia', cities: ['Sydney','Melbourne','Brisbane','Perth','Adelaide','Gold Coast','Canberra','Newcastle','Hobart','Darwin'] },
-    IN: { name: 'India', cities: ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow'] },
-    JP: { name: 'Japan', cities: ['Tokyo','Osaka','Yokohama','Nagoya','Sapporo','Kobe','Kyoto','Fukuoka','Kawasaki','Sendai'] },
-    BR: { name: 'Brazil', cities: ['Sao Paulo','Rio de Janeiro','Brasilia','Salvador','Fortaleza','Belo Horizonte','Manaus','Curitiba','Recife','Porto Alegre'] },
-    MX: { name: 'Mexico', cities: ['Mexico City','Guadalajara','Monterrey','Puebla','Tijuana','Leon','Ciudad Juarez','Zapopan','Merida','Cancun'] },
-    ZA: { name: 'South Africa', cities: ['Johannesburg','Cape Town','Durban','Pretoria','Port Elizabeth','Bloemfontein','East London','Nelspruit','Polokwane','Pietermaritzburg'] },
-    AE: { name: 'UAE', cities: ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain','Al Ain'] },
-    SG: { name: 'Singapore', cities: ['Singapore'] },
-    KR: { name: 'South Korea', cities: ['Seoul','Busan','Incheon','Daegu','Daejeon','Gwangju','Suwon','Ulsan','Changwon','Seongnam'] },
-    TR: { name: 'Turkey', cities: ['Istanbul','Ankara','Izmir','Bursa','Antalya','Adana','Gaziantep','Konya','Mersin','Kayseri'] },
-    IL: { name: 'Israel', cities: ['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beer Sheva','Holon','Bnei Brak'] },
-    NZ: { name: 'New Zealand', cities: ['Auckland','Wellington','Christchurch','Hamilton','Tauranga','Dunedin','Palmerston North','Napier','Nelson','Rotorua'] },
-    PH: { name: 'Philippines', cities: ['Manila','Quezon City','Davao','Cebu City','Zamboanga','Taguig','Antipolo','Pasig','Cagayan de Oro','Makati'] },
-    TH: { name: 'Thailand', cities: ['Bangkok','Chiang Mai','Pattaya','Nonthaburi','Nakhon Ratchasima','Hat Yai','Udon Thani','Khon Kaen','Phuket','Chiang Rai'] },
-    MY: { name: 'Malaysia', cities: ['Kuala Lumpur','George Town','Johor Bahru','Ipoh','Shah Alam','Petaling Jaya','Kuching','Kota Kinabalu','Malacca','Subang Jaya'] },
-    NG: { name: 'Nigeria', cities: ['Lagos','Abuja','Kano','Ibadan','Port Harcourt','Benin City','Kaduna','Maiduguri','Zaria','Aba'] },
-    KE: { name: 'Kenya', cities: ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Malindi','Kitale','Garissa','Nyeri'] },
-    EG: { name: 'Egypt', cities: ['Cairo','Alexandria','Giza','Shubra El Kheima','Port Said','Suez','Mansoura','Tanta','Asyut','Ismailia'] },
-    CO: { name: 'Colombia', cities: ['Bogota','Medellin','Cali','Barranquilla','Cartagena','Cucuta','Bucaramanga','Pereira','Santa Marta','Ibague'] },
-    AR: { name: 'Argentina', cities: ['Buenos Aires','Cordoba','Rosario','Mendoza','La Plata','San Miguel de Tucuman','Mar del Plata','Salta','Santa Fe','Neuquen'] },
-    CL: { name: 'Chile', cities: ['Santiago','Valparaiso','Concepcion','La Serena','Antofagasta','Temuco','Rancagua','Iquique','Talca','Arica'] },
-  };
+  // ── Country → City data (loaded from API) ──
+  let countriesData = []; // [{country, cities}]
 
   // Blocked social media domains for website field
   const SOCIAL_DOMAINS = ['instagram.com','facebook.com','fb.com','twitter.com','x.com','tiktok.com','linkedin.com','youtube.com','youtu.be','pinterest.com','snapchat.com','reddit.com','tumblr.com','threads.net'];
 
   function isSocialUrl(url) {
     try {
-      const h = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+      const normalized = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+      const h = new URL(normalized).hostname.toLowerCase().replace(/^www\./, '');
       return SOCIAL_DOMAINS.some(d => h === d || h.endsWith('.' + d));
     } catch { return false; }
   }
 
-  // ── Populate country dropdown ──
-  function initCountryDropdown() {
+  // ── Load countries from static JSON (197 countries) ──
+  async function initCountryDropdown() {
     const sel = document.getElementById('f_country');
-    const sorted = Object.entries(countryCities).sort((a, b) => a[1].name.localeCompare(b[1].name));
-    sorted.forEach(([code, data]) => {
-      const opt = document.createElement('option');
-      opt.value = code;
-      opt.textContent = data.name;
-      if (code === 'AT') opt.selected = true;
-      sel.appendChild(opt);
-    });
-    populateCities();
+    sel.innerHTML = '<option value="">Loading countries...</option>';
+    try {
+      const res = await fetch('/countries.json');
+      countriesData = await res.json();
+      countriesData.sort((a, b) => a.country.localeCompare(b.country));
+      sel.innerHTML = '<option value="">Select country...</option>';
+      countriesData.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.country;
+        opt.textContent = c.country;
+        sel.appendChild(opt);
+      });
+    } catch {
+      sel.innerHTML = '<option value="">Failed to load — type below</option>';
+    }
   }
 
   function populateCities() {
-    const countryCode = document.getElementById('f_country').value;
+    const countryName = document.getElementById('f_country').value;
     const citySel = document.getElementById('f_city');
     citySel.innerHTML = '';
-    if (!countryCode || !countryCities[countryCode]) {
+
+    // Remove custom input if it exists
+    const oldCustom = document.getElementById('f_city_custom');
+    if (oldCustom) oldCustom.remove();
+
+    if (!countryName) {
       citySel.innerHTML = '<option value="">Select country first...</option>';
       return;
     }
-    const cities = countryCities[countryCode].cities;
+
+    const entry = countriesData.find(c => c.country === countryName);
+    if (!entry || !entry.cities.length) {
+      citySel.innerHTML = '<option value="">No cities found — type below</option>';
+      // Show custom input immediately
+      showCityInput(citySel);
+      return;
+    }
+
+    const cities = entry.cities.slice().sort();
     cities.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c;
       opt.textContent = c;
       citySel.appendChild(opt);
     });
-    // Add "Other" option for manual entry
+
     const other = document.createElement('option');
     other.value = '__other__';
     other.textContent = '— Other (type below) —';
     citySel.appendChild(other);
 
     citySel.onchange = function() {
+      const custom = document.getElementById('f_city_custom');
       if (this.value === '__other__') {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.id = 'f_city_custom';
-        input.placeholder = 'Type your city...';
-        input.maxLength = 100;
-        input.style.marginTop = '0.5rem';
-        this.parentElement.appendChild(input);
+        if (!custom) showCityInput(this);
       } else {
-        const custom = document.getElementById('f_city_custom');
         if (custom) custom.remove();
       }
     };
   }
 
+  function showCityInput(el) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'f_city_custom';
+    input.placeholder = 'Type your city...';
+    input.maxLength = 100;
+    input.style.marginTop = '0.5rem';
+    el.parentElement.appendChild(input);
+  }
+
   function getSelectedCity() {
     const sel = document.getElementById('f_city');
-    if (sel.value === '__other__') {
-      const custom = document.getElementById('f_city_custom');
-      return custom ? custom.value.trim() : '';
+    const custom = document.getElementById('f_city_custom');
+    if (custom && (sel.value === '__other__' || sel.value === '')) {
+      return custom.value.trim();
     }
     return sel.value;
   }
@@ -2002,7 +1976,7 @@ nav ul a:hover { color: var(--accent); }
 
     const name = document.getElementById('f_name').value.trim();
     const description = document.getElementById('f_desc').value.trim();
-    const website = document.getElementById('f_website').value.trim();
+    let website = document.getElementById('f_website').value.trim();
     const email = document.getElementById('f_email').value.trim();
     const city = getSelectedCity();
     const country = document.getElementById('f_country').value;
@@ -2023,10 +1997,9 @@ nav ul a:hover { color: var(--accent); }
       return;
     }
 
-    if (!/^https?:\/\/.+/i.test(website)) {
-      errBanner.textContent = 'Website must start with https:// or http://';
-      errBanner.style.display = 'block';
-      return;
+    // Auto-prepend https:// if missing
+    if (website && !/^https?:\/\//i.test(website)) {
+      website = 'https://' + website;
     }
     if (isSocialUrl(website)) {
       errBanner.textContent = 'Please enter your business domain, not a social media page. Add social links in the Social Media section below.';
