@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const { getPool, migrate } = require("./db");
@@ -8,8 +9,20 @@ const PORT = process.env.PORT || 3000;
 // Parse JSON bodies
 app.use(express.json());
 
+// ── Request logging middleware ──
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms)`);
+  });
+  next();
+});
+
 // Run migration on startup
-migrate().catch((err) => console.error("Migration failed:", err.message));
+migrate()
+  .then(() => console.log("Database ready"))
+  .catch((err) => console.error("Migration failed:", err.message));
 
 // Blocked domains for website field — social media is not a business website
 const SOCIAL_DOMAINS = [
@@ -35,6 +48,15 @@ function isSocialMediaUrl(url) {
   }
 }
 
+// Normalize website URL — auto-prepend https:// if missing
+function normalizeUrl(url) {
+  url = url.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    url = "https://" + url;
+  }
+  return url;
+}
+
 const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education"];
 
 // Health check
@@ -53,6 +75,8 @@ app.get("/health", async (_req, res) => {
   }
   res.json(status);
 });
+
+// countries.json is served statically from public/
 
 // ── API: Get all approved businesses ──
 app.get("/api/businesses", async (_req, res) => {
@@ -86,14 +110,19 @@ app.get("/api/businesses", async (_req, res) => {
 // ── API: Submit a new business listing ──
 app.post("/api/businesses", async (req, res) => {
   const pool = getPool();
-  if (!pool) return res.status(503).json({ error: "Database not configured" });
+  if (!pool) {
+    console.error("POST /api/businesses — DATABASE_URL not set, cannot save");
+    return res.status(503).json({ error: "Database is not available. Please try again later." });
+  }
 
   const {
-    name, category, description, website, city, country,
+    name, category, description, city, country,
     contact_email, contact_phone, price_range, tags, emoji,
     year_founded, owner_name, short_tagline,
     instagram, facebook, linkedin, tiktok,
   } = req.body;
+
+  let { website } = req.body;
 
   // Validate required fields
   const missing = [];
@@ -112,14 +141,11 @@ app.post("/api/businesses", async (req, res) => {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
-  // URL format check
-  const urlPattern = /^https?:\/\/.+/i;
-  if (!urlPattern.test(website.trim())) {
-    return res.status(400).json({ error: "Website must start with http:// or https://" });
-  }
+  // Normalize and validate website URL
+  website = normalizeUrl(website);
 
   // Reject social media URLs as website
-  if (isSocialMediaUrl(website.trim())) {
+  if (isSocialMediaUrl(website)) {
     return res.status(400).json({
       error: "Please enter your business domain, not a social media page. Add social links in the Social Media section.",
     });
@@ -133,6 +159,8 @@ app.post("/api/businesses", async (req, res) => {
     ? tags.map((t) => t.trim()).filter(Boolean)
     : (tags || "").split(",").map((t) => t.trim()).filter(Boolean);
 
+  console.log(`New business submission: "${name}" (${category}) from ${city}, ${country}`);
+
   try {
     await pool.query(
       `INSERT INTO businesses
@@ -142,8 +170,8 @@ app.post("/api/businesses", async (req, res) => {
          instagram, facebook, linkedin, tiktok)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
       [
-        name.trim(), category.trim(), description.trim(), website.trim(),
-        city.trim(), (country || "AT").trim(),
+        name.trim(), category.trim(), description.trim(), website,
+        city.trim(), (country || "").trim(),
         contact_email.trim(), contact_phone?.trim() || null,
         price_range || "€",
         tagArray, emoji || "🏪",
@@ -153,6 +181,7 @@ app.post("/api/businesses", async (req, res) => {
         linkedin?.trim() || null, tiktok?.trim() || null,
       ]
     );
+    console.log(`Business "${name}" saved successfully`);
     res.status(201).json({ message: "Business submitted successfully! It will appear after review." });
   } catch (err) {
     console.error("POST /api/businesses error:", err.message);
@@ -186,7 +215,7 @@ app.get("/api/businesses/:id/reviews", async (req, res) => {
 // ── API: Submit a review ──
 app.post("/api/businesses/:id/reviews", async (req, res) => {
   const pool = getPool();
-  if (!pool) return res.status(503).json({ error: "Database not configured" });
+  if (!pool) return res.status(503).json({ error: "Database is not available. Please try again later." });
 
   const businessId = parseInt(req.params.id, 10);
   if (isNaN(businessId)) return res.status(400).json({ error: "Invalid business ID" });
@@ -201,7 +230,6 @@ app.post("/api/businesses/:id/reviews", async (req, res) => {
     return res.status(400).json({ error: "Rating must be between 1 and 5" });
   }
 
-  // Verify business exists and is approved
   try {
     const { rows } = await pool.query(
       "SELECT id FROM businesses WHERE id = $1 AND approved = TRUE",
@@ -217,12 +245,13 @@ app.post("/api/businesses/:id/reviews", async (req, res) => {
       [businessId, reviewer_name.trim(), r, comment?.trim() || null]
     );
 
-    // Return updated stats
     const stats = await pool.query(
       `SELECT ROUND(AVG(rating)::numeric, 1) AS avg_rating, COUNT(*) AS review_count
        FROM reviews WHERE business_id = $1`,
       [businessId]
     );
+
+    console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"`);
 
     res.status(201).json({
       message: "Review submitted!",
@@ -245,4 +274,5 @@ app.get("*", (_req, res) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Database: ${process.env.DATABASE_URL ? "configured" : "NOT configured — set DATABASE_URL"}`);
 });
