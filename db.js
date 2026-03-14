@@ -53,7 +53,7 @@ async function migrate() {
 
       -- Meta
       created_at    TIMESTAMPTZ   DEFAULT NOW(),
-      approved      BOOLEAN       DEFAULT FALSE
+      approved      BOOLEAN       DEFAULT TRUE
     );
   `);
 
