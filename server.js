@@ -183,6 +183,34 @@ app.get("/api/auth/me", authRequired, (req, res) => {
   res.json({ user: req.user });
 });
 
+// ── Auth: Get user's businesses ──
+app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.json([]);
+  try {
+    const { rows } = await pool.query(
+      `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
+              b.price_range, b.tags, b.emoji, b.logo, b.product_photo,
+              COALESCE(r.avg_rating, 0) AS avg_rating,
+              COALESCE(r.review_count, 0) AS review_count
+       FROM businesses b
+       LEFT JOIN (
+         SELECT business_id,
+                ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+                COUNT(*) AS review_count
+         FROM reviews GROUP BY business_id
+       ) r ON r.business_id = b.id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("GET my-businesses error:", err.message);
+    res.status(500).json({ error: "Failed to fetch your businesses" });
+  }
+});
+
 // countries.json is served statically from public/
 
 // ── API: Get all approved businesses ──

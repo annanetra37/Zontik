@@ -144,6 +144,78 @@ nav ul a:hover { color: var(--accent); }
   font-size: 0.78rem; font-weight: 600; margin-left: 0.3rem;
 }
 .nav-user-pill button:hover { color: var(--accent); }
+.nav-user-pill a:hover { text-decoration: underline !important; }
+
+/* ── PROFILE MODAL ── */
+.profile-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(28,24,48,0.45); backdrop-filter: blur(6px);
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 4vh 1rem; overflow-y: auto;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.profile-overlay.open { opacity: 1; pointer-events: auto; }
+.profile-modal {
+  background: var(--surface); border-radius: 1.2rem;
+  width: 100%; max-width: 680px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+  transform: translateY(20px); transition: transform 0.3s;
+}
+.profile-overlay.open .profile-modal { transform: translateY(0); }
+.profile-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.5rem; border-bottom: 1.5px solid var(--border);
+}
+.profile-header h2 { font-size: 1.1rem; font-weight: 700; }
+.profile-tabs {
+  display: flex; gap: 0; border-bottom: 1.5px solid var(--border);
+}
+.profile-tab {
+  flex: 1; padding: 0.75rem 1rem; text-align: center;
+  font-size: 0.85rem; font-weight: 600; color: var(--ink-soft);
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: inherit;
+}
+.profile-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.profile-tab:hover { color: var(--accent); }
+.profile-content { padding: 1.2rem 1.5rem; min-height: 200px; }
+.profile-biz-card {
+  display: flex; gap: 1rem; padding: 1rem;
+  border: 1.5px solid var(--border); border-radius: 0.8rem;
+  margin-bottom: 0.75rem; transition: border-color 0.2s;
+}
+.profile-biz-card:hover { border-color: var(--accent); }
+.profile-biz-logo {
+  width: 56px; height: 56px; border-radius: 0.6rem;
+  object-fit: cover; background: var(--bg); flex-shrink: 0;
+}
+.profile-biz-emoji {
+  width: 56px; height: 56px; border-radius: 0.6rem;
+  background: var(--bg); display: flex; align-items: center;
+  justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+}
+.profile-biz-info { flex: 1; min-width: 0; }
+.profile-biz-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.15rem; }
+.profile-biz-meta { font-size: 0.8rem; color: var(--ink-soft); }
+.profile-biz-actions { display: flex; align-items: center; gap: 0.5rem; }
+.profile-biz-edit {
+  background: var(--accent-soft); color: var(--accent); border: none;
+  padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.78rem;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.profile-biz-edit:hover { background: var(--accent); color: #fff; }
+.profile-empty {
+  text-align: center; padding: 2rem 1rem; color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.profile-review-item {
+  padding: 1rem; border: 1.5px solid var(--border); border-radius: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+.profile-review-biz { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+.profile-review-stars { color: #f5a623; margin-bottom: 0.2rem; }
+.profile-review-comment { font-size: 0.85rem; color: var(--ink-mid); }
 
 /* ── HERO ── */
 .hero {
@@ -778,6 +850,7 @@ nav ul a:hover { color: var(--accent); }
         <a href="#" onclick="heroFilterFromNav('craft');return false;">✦ Crafts &amp; Local</a>
         <a href="#" onclick="heroFilterFromNav('fashion');return false;">◈ Fashion &amp; Jewelry</a>
         <a href="#" onclick="heroFilterFromNav('health');return false;">◎ Wellness &amp; Care</a>
+        <a href="#" onclick="heroFilterFromNav('education');return false;">📚 Education</a>
         <a href="#" onclick="heroFilterFromNav('travel');return false;">🌍 Travel</a>
         <a href="#" onclick="heroFilterFromNav('experiences');return false;">⭐ Experiences</a>
       </div>
@@ -787,7 +860,6 @@ nav ul a:hover { color: var(--accent); }
     <li id="navAuth">
       <div class="nav-auth">
         <button class="nav-auth-btn" onclick="openAuthModal('login')">Log in</button>
-        <button class="nav-auth-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="openAuthModal('register')">Sign up</button>
       </div>
     </li>
   </ul>
@@ -1032,6 +1104,7 @@ nav ul a:hover { color: var(--accent); }
             <button type="button" class="cat-chip" data-cat="craft" onclick="selectCat(this)">Crafts &amp; Local</button>
             <button type="button" class="cat-chip" data-cat="health" onclick="selectCat(this)">Wellness &amp; Care</button>
             <button type="button" class="cat-chip" data-cat="fashion" onclick="selectCat(this)">Fashion &amp; Jewelry</button>
+            <button type="button" class="cat-chip" data-cat="education" onclick="selectCat(this)">Education</button>
             <button type="button" class="cat-chip" data-cat="travel" onclick="selectCat(this)">Travel</button>
             <button type="button" class="cat-chip" data-cat="experiences" onclick="selectCat(this)">Experiences</button>
           </div>
@@ -1141,6 +1214,23 @@ nav ul a:hover { color: var(--accent); }
   </div>
 </div>
 
+<!-- PROFILE MODAL -->
+<div class="profile-overlay" id="profileModal">
+  <div class="profile-modal">
+    <div class="profile-header">
+      <h2 id="profileTitle">My Profile</h2>
+      <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+    </div>
+    <div class="profile-tabs">
+      <button class="profile-tab active" onclick="switchProfileTab('businesses', this)">My Businesses</button>
+      <button class="profile-tab" onclick="switchProfileTab('reviews', this)">My Reviews</button>
+    </div>
+    <div class="profile-content" id="profileContent">
+      <div class="profile-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── Auth state ──
   let authToken = localStorage.getItem('zontik_token');
@@ -1156,9 +1246,9 @@ nav ul a:hover { color: var(--accent); }
   function updateAuthUI() {
     const el = document.getElementById('navAuth');
     if (authUser) {
-      el.innerHTML = '<div class="nav-user-pill">' + esc(authUser.name) + ' <button onclick="logout()">Log out</button></div>';
+      el.innerHTML = '<div class="nav-user-pill"><a href="#" onclick="openProfileModal();return false" style="color:inherit;text-decoration:none">' + esc(authUser.name) + '</a> <button onclick="logout()">Log out</button></div>';
     } else {
-      el.innerHTML = '<div class="nav-auth"><button class="nav-auth-btn" onclick="openAuthModal(\'login\')">Log in</button><button class="nav-auth-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="openAuthModal(\'register\')">Sign up</button></div>';
+      el.innerHTML = '<div class="nav-auth"><button class="nav-auth-btn" onclick="openAuthModal(\'login\')">Log in</button></div>';
     }
   }
   function logout() { setAuth(null, null); loadBusinesses(); }
@@ -1232,12 +1322,13 @@ nav ul a:hover { color: var(--accent); }
     craft: 'Crafts & Local',
     fashion: 'Fashion & Jewelry',
     health: 'Wellness & Care',
+    education: 'Education',
     travel: 'Travel',
     experiences: 'Experiences'
   };
 
   const categoryIcons = {
-    all: '✦', food: '🛒', tech: '⚡', craft: '✦', fashion: '◈', health: '◎', travel: '🌍', experiences: '⭐'
+    all: '✦', food: '🛒', tech: '⚡', craft: '✦', fashion: '◈', health: '◎', education: '📚', travel: '🌍', experiences: '⭐'
   };
 
   // ── Sidebar filter handlers ──
@@ -1306,19 +1397,19 @@ nav ul a:hover { color: var(--accent); }
     // Category section
     const catSection = document.getElementById('sidebarCategories');
     catSection.innerHTML = '<div class="sidebar-heading">Category</div>';
-    catSection.innerHTML += '<button class="sidebar-item active" onclick="setFilter(\'all\',this)"><span class="si-icon">✦</span> All Businesses<span class="si-count">' + businesses.length + '</span></button>';
+    catSection.innerHTML += '<button class="sidebar-item' + (activeFilter === 'all' ? ' active' : '') + '" onclick="setFilter(\'all\',this)"><span class="si-icon">✦</span> All Businesses<span class="si-count">' + businesses.length + '</span></button>';
     Object.keys(categoryNames).forEach(cat => {
       if (cat === 'all' || !catCounts[cat]) return;
-      catSection.innerHTML += '<button class="sidebar-item" onclick="setFilter(\'' + cat + '\',this)"><span class="si-icon">' + (categoryIcons[cat] || '✦') + '</span> ' + categoryNames[cat] + '<span class="si-count">' + catCounts[cat] + '</span></button>';
+      catSection.innerHTML += '<button class="sidebar-item' + (activeFilter === cat ? ' active' : '') + '" onclick="setFilter(\'' + cat + '\',this)"><span class="si-icon">' + (categoryIcons[cat] || '✦') + '</span> ' + categoryNames[cat] + '<span class="si-count">' + catCounts[cat] + '</span></button>';
     });
 
     // Location section
     const locSection = document.getElementById('sidebarLocations');
     locSection.innerHTML = '<div class="sidebar-heading">Location</div>';
-    locSection.innerHTML += '<button class="sidebar-item active" onclick="setLocation(\'all\',this)"><span class="si-icon">📍</span> All locations</button>';
+    locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === 'all' ? ' active' : '') + '" onclick="setLocation(\'all\',this)"><span class="si-icon">📍</span> All locations</button>';
     const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
     sortedCities.forEach(([city, count]) => {
-      locSection.innerHTML += '<button class="sidebar-item" onclick="setLocation(\'' + city.replace(/'/g, "\\'") + '\',this)"><span class="si-icon">📍</span> ' + esc(city) + '<span class="si-count">' + count + '</span></button>';
+      locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === city ? ' active' : '') + '" onclick="setLocation(\'' + city.replace(/'/g, "\\'") + '\',this)"><span class="si-icon">📍</span> ' + esc(city) + '<span class="si-count">' + count + '</span></button>';
     });
 
     // Show/hide rating section based on whether any business has reviews
@@ -1402,7 +1493,7 @@ nav ul a:hover { color: var(--accent); }
     if (editingBusinessId) resetListModal();
   }
   document.getElementById('listModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeReviewModal(); closeAuthModal(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeReviewModal(); closeAuthModal(); closeProfileModal(); } });
 
   // ── Review Modal ──
   let currentReviewBizId = null;
@@ -1702,6 +1793,96 @@ nav ul a:hover { color: var(--accent); }
     document.querySelector('#priceOpts .price-opt').classList.add('selected');
     ['logoUploadArea','photoUploadArea'].forEach(id => { const img = document.getElementById(id).querySelector('.preview-img'); if (img) img.remove(); });
     document.getElementById('formError').style.display = 'none';
+  }
+
+  // ── Profile Modal ──
+  let profileTab = 'businesses';
+  let profileBusinesses = [];
+
+  function openProfileModal() {
+    if (!authToken) return;
+    document.getElementById('profileModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    profileTab = 'businesses';
+    document.querySelectorAll('.profile-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+    loadProfileBusinesses();
+  }
+  function closeProfileModal() {
+    document.getElementById('profileModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('profileModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeProfileModal(); });
+
+  function switchProfileTab(tab, btn) {
+    profileTab = tab;
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab === 'businesses') loadProfileBusinesses();
+    else loadProfileReviews();
+  }
+
+  async function loadProfileBusinesses() {
+    const content = document.getElementById('profileContent');
+    content.innerHTML = '<div class="profile-empty">Loading...</div>';
+    try {
+      const res = await fetch('/api/auth/my-businesses', { headers: { 'Authorization': 'Bearer ' + authToken } });
+      const businesses = await res.json();
+      profileBusinesses = businesses;
+      if (!businesses.length) {
+        content.innerHTML = '<div class="profile-empty"><div style="font-size:2rem;margin-bottom:0.5rem">🏪</div>You haven\'t listed any businesses yet.<br><button onclick="closeProfileModal();openModal()" style="margin-top:0.75rem;background:var(--accent);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:999px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Your Business</button></div>';
+        return;
+      }
+      content.innerHTML = businesses.map(b => {
+        const logoHtml = b.logo
+          ? '<img class="profile-biz-logo" src="' + esc(b.logo) + '" alt=""/>'
+          : '<div class="profile-biz-emoji">' + esc(b.emoji || '🏪') + '</div>';
+        const avgRating = parseFloat(b.avg_rating) || 0;
+        const reviewCount = parseInt(b.review_count) || 0;
+        const ratingText = reviewCount > 0 ? starsHtml(avgRating) + ' ' + avgRating + ' (' + reviewCount + ' review' + (reviewCount !== 1 ? 's' : '') + ')' : 'No reviews yet';
+        return '<div class="profile-biz-card">' + logoHtml +
+          '<div class="profile-biz-info"><div class="profile-biz-name">' + esc(b.name) + '</div>' +
+          '<div class="profile-biz-meta">' + esc(categoryNames[b.category] || b.category) + ' · ' + esc(b.city) + ', ' + esc(b.country) + '</div>' +
+          '<div class="profile-biz-meta">' + ratingText + '</div></div>' +
+          '<div class="profile-biz-actions"><button class="profile-biz-edit" onclick="closeProfileModal();openEditModal(' + b.id + ')">Edit</button></div></div>';
+      }).join('');
+    } catch { content.innerHTML = '<div class="profile-empty">Could not load your businesses</div>'; }
+  }
+
+  async function loadProfileReviews() {
+    const content = document.getElementById('profileContent');
+    content.innerHTML = '<div class="profile-empty">Loading...</div>';
+    // Reviews don't have user_id, so we show reviews from businesses the user owns
+    if (!profileBusinesses.length) {
+      await loadProfileBusinesses();
+      // switch back to reviews tab visually
+      profileTab = 'reviews';
+      document.querySelectorAll('.profile-tab').forEach((t, i) => t.classList.toggle('active', i === 1));
+    }
+    if (!profileBusinesses.length) {
+      content.innerHTML = '<div class="profile-empty">No reviews to show — you haven\'t listed any businesses yet.</div>';
+      return;
+    }
+    try {
+      let allReviews = [];
+      for (const b of profileBusinesses) {
+        const res = await fetch('/api/businesses/' + b.id + '/reviews');
+        const reviews = await res.json();
+        reviews.forEach(r => { r._bizName = b.name; r._bizId = b.id; });
+        allReviews = allReviews.concat(reviews);
+      }
+      if (!allReviews.length) {
+        content.innerHTML = '<div class="profile-empty"><div style="font-size:2rem;margin-bottom:0.5rem">⭐</div>No reviews on your businesses yet.</div>';
+        return;
+      }
+      allReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      content.innerHTML = allReviews.map(r =>
+        '<div class="profile-review-item">' +
+        '<div class="profile-review-biz">' + esc(r._bizName) + '</div>' +
+        '<div class="profile-review-stars">' + starsHtml(r.rating) + ' by ' + esc(r.reviewer_name) + ' · ' + new Date(r.created_at).toLocaleDateString() + '</div>' +
+        (r.comment ? '<div class="profile-review-comment">' + esc(r.comment) + '</div>' : '') +
+        '</div>'
+      ).join('');
+    } catch { content.innerHTML = '<div class="profile-empty">Could not load reviews</div>'; }
   }
 
   // ── Init ──
