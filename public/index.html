@@ -217,6 +217,114 @@ nav ul a:hover { color: var(--accent); }
 .profile-review-stars { color: #f5a623; margin-bottom: 0.2rem; }
 .profile-review-comment { font-size: 0.85rem; color: var(--ink-mid); }
 
+/* ── DETAIL MODAL ── */
+.detail-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(28,24,48,0.45); backdrop-filter: blur(6px);
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 3vh 1rem; overflow-y: auto;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.detail-overlay.open { opacity: 1; pointer-events: auto; }
+.detail-modal {
+  background: var(--surface); border-radius: 1.4rem;
+  width: 100%; max-width: 720px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+  transform: translateY(20px); transition: transform 0.3s;
+  overflow: hidden;
+}
+.detail-overlay.open .detail-modal { transform: translateY(0); }
+.detail-banner {
+  height: 200px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent-soft), var(--bg));
+  overflow: hidden;
+}
+.detail-banner img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.detail-banner .detail-emoji {
+  font-size: 4rem;
+}
+.detail-close {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  background: var(--surface); border: none; width: 36px; height: 36px;
+  border-radius: 50%; font-size: 1.2rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12); z-index: 2;
+  color: var(--ink); transition: background 0.15s;
+}
+.detail-close:hover { background: var(--bg); }
+.detail-logo {
+  position: absolute; bottom: -28px; left: 1.5rem;
+  width: 56px; height: 56px; border-radius: 0.8rem;
+  object-fit: cover; border: 3px solid var(--surface);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff;
+}
+.detail-body { padding: 1.5rem; }
+.detail-body.has-logo { padding-top: 2.2rem; }
+.detail-category {
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.3rem;
+}
+.detail-name {
+  font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700;
+  color: var(--ink); margin-bottom: 0.2rem; line-height: 1.2;
+}
+.detail-tagline {
+  font-size: 0.9rem; color: var(--ink-mid); font-style: italic;
+  margin-bottom: 0.8rem;
+}
+.detail-rating { margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+.detail-rating-text { font-size: 0.85rem; color: var(--ink-soft); }
+.detail-desc {
+  font-size: 0.92rem; color: var(--ink-mid); line-height: 1.75;
+  margin-bottom: 1.2rem;
+}
+.detail-meta {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.detail-meta-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.84rem; color: var(--ink-mid);
+}
+.detail-meta-icon { font-size: 1rem; flex-shrink: 0; }
+.detail-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.2rem; }
+.detail-tag {
+  font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.7rem;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+  border: 1.5px solid var(--lavender);
+}
+.detail-socials {
+  display: flex; gap: 0.5rem; margin-bottom: 1.2rem;
+}
+.detail-social {
+  font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+  border-radius: 999px; background: var(--bg); color: var(--ink-mid);
+  text-decoration: none; border: 1.5px solid var(--border);
+  transition: all 0.15s;
+}
+.detail-social:hover { border-color: var(--accent); color: var(--accent); }
+.detail-actions {
+  display: flex; gap: 0.6rem; padding-top: 1rem;
+  border-top: 1.5px solid var(--border);
+}
+.detail-visit {
+  flex: 1; text-align: center; padding: 0.7rem 1.2rem;
+  background: var(--accent); color: #fff; border-radius: 999px;
+  font-weight: 700; font-size: 0.9rem; text-decoration: none;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.detail-visit:hover { box-shadow: 0 6px 22px #7c6ff050; transform: translateY(-1px); }
+.detail-review-btn {
+  padding: 0.7rem 1.2rem; background: var(--accent-soft); color: var(--accent);
+  border: none; border-radius: 999px; font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.detail-review-btn:hover { background: var(--accent); color: #fff; }
+.card { cursor: pointer; }
+
 /* ── HERO ── */
 .hero {
   text-align: center;
@@ -1214,6 +1322,16 @@ nav ul a:hover { color: var(--accent); }
   </div>
 </div>
 
+<!-- DETAIL MODAL -->
+<div class="detail-overlay" id="detailModal">
+  <div class="detail-modal">
+    <div class="detail-banner" id="detailBanner">
+      <button class="detail-close" onclick="closeDetailModal()">&times;</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
 <!-- PROFILE MODAL -->
 <div class="profile-overlay" id="profileModal">
   <div class="profile-modal">
@@ -1314,6 +1432,7 @@ nav ul a:hover { color: var(--accent); }
   let activeFilter = 'all';
   let activeLocation = 'all';
   let activeRatingFilter = 0;
+  let allBusinesses = [];
 
   const categoryNames = {
     all: 'All Businesses',
@@ -1350,7 +1469,12 @@ nav ul a:hover { color: var(--accent); }
     btn.classList.add('active');
     filterCards();
   }
-  function togglePrice(btn) { btn.classList.toggle('active'); filterCards(); }
+  function togglePrice(btn) {
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.price-chip').forEach(c => c.classList.remove('active'));
+    if (!wasActive) btn.classList.add('active');
+    filterCards();
+  }
 
   function heroFilterFromNav(cat) {
     activeFilter = cat;
@@ -1365,16 +1489,15 @@ nav ul a:hover { color: var(--accent); }
   function filterCards() {
     const q = document.getElementById('searchInput').value.toLowerCase();
     const cards = document.querySelectorAll('.card');
-    const activePrices = [];
-    document.querySelectorAll('.price-chip.active').forEach(chip => activePrices.push(chip.textContent.trim()));
-    const priceFilterActive = activePrices.length > 0 && activePrices.length < 4;
+    const activeChip = document.querySelector('.price-chip.active');
+    const activePrice = activeChip ? activeChip.textContent.trim() : null;
     const minRating = activeRatingFilter;
     let visible = 0;
     cards.forEach(card => {
       const catOk = activeFilter === 'all' || card.dataset.category === activeFilter;
       const locOk = activeLocation === 'all' || card.dataset.city === activeLocation;
       const searchOk = !q || card.dataset.name.toLowerCase().includes(q) || card.dataset.tags.toLowerCase().includes(q);
-      const priceOk = !priceFilterActive || activePrices.includes(card.dataset.price);
+      const priceOk = !activePrice || card.dataset.price === activePrice;
       const ratingOk = !minRating || parseFloat(card.dataset.rating) >= minRating;
       const show = catOk && locOk && searchOk && priceOk && ratingOk;
       card.classList.toggle('hidden', !show);
@@ -1437,6 +1560,7 @@ nav ul a:hover { color: var(--accent); }
       const res = await fetch('/api/businesses');
       if (!res.ok) return;
       const businesses = await res.json();
+      allBusinesses = businesses;
       const grid = document.getElementById('cardGrid');
       grid.innerHTML = '';
       if (!businesses.length) {
@@ -1468,6 +1592,8 @@ nav ul a:hover { color: var(--accent); }
         card.dataset.city = b.city || '';
         card.dataset.price = b.price_range || '€';
         card.dataset.rating = avgRating.toString();
+        card.dataset.bizId = b.id;
+        card.onclick = function(e) { if (!e.target.closest('.card-edit-btn') && !e.target.closest('.card-review-btn')) openDetailModal(b.id); };
         card.innerHTML =
           '<div class="card-banner">' + bannerContent + logoHtml + featured + editBtn + '</div>' +
           '<div class="' + bodyClass + '">' +
@@ -1476,7 +1602,7 @@ nav ul a:hover { color: var(--accent); }
             ratingHtml +
             '<div class="card-desc">' + esc(b.description) + '</div>' +
             '<div class="card-tags">' + tags + '</div>' +
-            '<div class="card-footer"><span class="card-location">📍 ' + esc(b.city) + ', ' + esc(b.country) + '</span><a href="' + esc(b.website) + '" class="card-link" target="_blank" rel="noopener">Visit Site →</a></div>' +
+            '<div class="card-footer"><span class="card-location">📍 ' + esc(b.city) + ', ' + esc(b.country) + '</span><span class="card-link">View Details →</span></div>' +
           '</div>';
         grid.appendChild(card);
       });
@@ -1499,7 +1625,7 @@ nav ul a:hover { color: var(--accent); }
     if (editingBusinessId) resetListModal();
   }
   document.getElementById('listModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeReviewModal(); closeAuthModal(); closeProfileModal(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetailModal(); closeModal(); closeReviewModal(); closeAuthModal(); closeProfileModal(); } });
 
   // ── Review Modal ──
   let currentReviewBizId = null;
@@ -1800,6 +1926,70 @@ nav ul a:hover { color: var(--accent); }
     ['logoUploadArea','photoUploadArea'].forEach(id => { const img = document.getElementById(id).querySelector('.preview-img'); if (img) img.remove(); });
     document.getElementById('formError').style.display = 'none';
   }
+
+  // ── Detail Modal ──
+  function openDetailModal(bizId) {
+    const b = allBusinesses.find(x => x.id === bizId);
+    if (!b) return;
+    const banner = document.getElementById('detailBanner');
+    const body = document.getElementById('detailBody');
+
+    // Banner
+    if (b.product_photo) {
+      banner.innerHTML = '<img src="' + esc(b.product_photo) + '" alt=""/><button class="detail-close" onclick="closeDetailModal()">&times;</button>';
+    } else {
+      banner.innerHTML = '<span class="detail-emoji">' + esc(b.emoji || '🏪') + '</span><button class="detail-close" onclick="closeDetailModal()">&times;</button>';
+    }
+    if (b.logo) {
+      banner.innerHTML += '<img class="detail-logo" src="' + esc(b.logo) + '" alt=""/>';
+    }
+
+    // Body
+    const avgRating = parseFloat(b.avg_rating) || 0;
+    const reviewCount = parseInt(b.review_count) || 0;
+    const ratingHtml = reviewCount > 0
+      ? '<div class="detail-rating">' + starsHtml(avgRating) + '<span class="detail-rating-text">' + avgRating + ' (' + reviewCount + ' review' + (reviewCount !== 1 ? 's' : '') + ')</span></div>'
+      : '<div class="detail-rating"><span class="detail-rating-text">No reviews yet</span></div>';
+
+    const tags = (b.tags || []).map(t => '<span class="detail-tag">' + esc(t) + '</span>').join('');
+
+    const socials = [];
+    if (b.instagram) socials.push('<a class="detail-social" href="' + esc(b.instagram) + '" target="_blank" rel="noopener">Instagram</a>');
+    if (b.facebook) socials.push('<a class="detail-social" href="' + esc(b.facebook) + '" target="_blank" rel="noopener">Facebook</a>');
+    if (b.linkedin) socials.push('<a class="detail-social" href="' + esc(b.linkedin) + '" target="_blank" rel="noopener">LinkedIn</a>');
+    if (b.tiktok) socials.push('<a class="detail-social" href="' + esc(b.tiktok) + '" target="_blank" rel="noopener">TikTok</a>');
+
+    let meta = '<div class="detail-meta">';
+    meta += '<div class="detail-meta-item"><span class="detail-meta-icon">📍</span> ' + esc(b.city) + ', ' + esc(b.country) + '</div>';
+    meta += '<div class="detail-meta-item"><span class="detail-meta-icon">💰</span> ' + esc(b.price_range || '€') + '</div>';
+    if (b.year_founded) meta += '<div class="detail-meta-item"><span class="detail-meta-icon">📅</span> Founded ' + b.year_founded + '</div>';
+    if (b.owner_name) meta += '<div class="detail-meta-item"><span class="detail-meta-icon">👤</span> ' + esc(b.owner_name) + '</div>';
+    meta += '</div>';
+
+    body.className = 'detail-body' + (b.logo ? ' has-logo' : '');
+    body.innerHTML =
+      '<div class="detail-category">' + esc(categoryNames[b.category] || b.category) + '</div>' +
+      '<div class="detail-name">' + esc(b.name) + '</div>' +
+      (b.short_tagline ? '<div class="detail-tagline">' + esc(b.short_tagline) + '</div>' : '') +
+      ratingHtml +
+      '<div class="detail-desc">' + esc(b.description) + '</div>' +
+      meta +
+      (tags ? '<div class="detail-tags">' + tags + '</div>' : '') +
+      (socials.length ? '<div class="detail-socials">' + socials.join('') + '</div>' : '') +
+      '<div class="detail-actions">' +
+        '<a class="detail-visit" href="' + esc(b.website) + '" target="_blank" rel="noopener">Visit Website →</a>' +
+        '<button class="detail-review-btn" onclick="closeDetailModal();openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Write Review</button>' +
+      '</div>';
+
+    document.getElementById('detailModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
 
   // ── Profile Modal ──
   let profileTab = 'businesses';
