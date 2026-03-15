@@ -136,6 +136,62 @@ nav ul a:hover { color: var(--accent); }
 }
 .nav-cta:hover { box-shadow: 0 6px 22px #7c6ff050 !important; transform: translateY(-1px); }
 
+/* ── AUTH NAV ── */
+.nav-auth { display: flex; align-items: center; gap: 0.5rem; }
+.nav-auth-btn {
+  background: none; border: 1.5px solid var(--border); color: var(--ink-mid);
+  padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.nav-auth-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-user-pill {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--accent-soft); padding: 0.35rem 1rem; border-radius: 999px;
+  font-size: 0.85rem; font-weight: 600; color: var(--accent);
+}
+.nav-user-pill button {
+  background: none; border: none; color: var(--ink-soft); cursor: pointer;
+  font-size: 0.78rem; font-weight: 600; margin-left: 0.3rem;
+}
+.nav-user-pill button:hover { color: var(--accent); }
+
+/* ── IMAGE UPLOAD PREVIEW ── */
+.img-upload-area {
+  border: 2px dashed var(--border); border-radius: 1rem; padding: 1.2rem;
+  text-align: center; cursor: pointer; transition: border-color 0.2s;
+  position: relative; overflow: hidden;
+}
+.img-upload-area:hover { border-color: var(--accent); }
+.img-upload-area input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.img-upload-area .preview-img {
+  max-height: 120px; max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem;
+}
+.img-upload-label { color: var(--ink-soft); font-size: 0.85rem; }
+
+/* ── CARD LOGO & PRODUCT PHOTO ── */
+.card-logo {
+  width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+  border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: absolute; bottom: -24px; left: 16px; background: #fff;
+}
+.card-banner { position: relative; }
+.card-product-photo {
+  width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
+}
+.card-body-with-logo { padding-top: 1.8rem; }
+
+/* ── EDIT BUTTON ON CARD ── */
+.card-edit-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  background: rgba(255,255,255,0.9); border: 1px solid var(--border);
+  border-radius: 0.5rem; padding: 0.3rem 0.7rem; font-size: 0.75rem;
+  font-weight: 700; color: var(--accent); cursor: pointer;
+  font-family: inherit; backdrop-filter: blur(4px);
+}
+.card-edit-btn:hover { background: var(--accent); color: #fff; }
+
 /* ── HERO ── */
 .hero {
   text-align: center;
@@ -1011,6 +1067,12 @@ nav ul a:hover { color: var(--accent); }
     </li>
     <li><a href="#about">About</a></li>
     <li><a href="#" class="nav-cta" onclick="openModal();return false;">List Your Business</a></li>
+    <li id="navAuth">
+      <div class="nav-auth">
+        <button class="nav-auth-btn" onclick="openAuthModal('login')">Log in</button>
+        <button class="nav-auth-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="openAuthModal('register')">Sign up</button>
+      </div>
+    </li>
   </ul>
 </nav>
 
@@ -1336,6 +1398,29 @@ nav ul a:hover { color: var(--accent); }
         </div>
       </div>
 
+      <!-- Section: Brand Images -->
+      <div class="form-section">
+        <div class="form-section-title">Brand Images</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Logo</label>
+            <div class="img-upload-area" id="logoUploadArea">
+              <div class="img-upload-label">Click or drag to upload logo</div>
+              <div class="form-hint">Square image works best. Max 5MB.</div>
+              <input type="file" id="f_logo" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewImage(this, 'logoUploadArea')" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Product Photo</label>
+            <div class="img-upload-area" id="photoUploadArea">
+              <div class="img-upload-label">Click or drag to upload a product photo</div>
+              <div class="form-hint">Shown as card banner. Max 5MB.</div>
+              <input type="file" id="f_product_photo" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewImage(this, 'photoUploadArea')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Section 2: Category & Display -->
       <div class="form-section">
         <div class="form-section-title">Category & Display</div>
@@ -1508,7 +1593,169 @@ nav ul a:hover { color: var(--accent); }
   </div>
 </div>
 
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="authModalTitle">Log in</span>
+      <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="authModalBody">
+      <div class="form-error-banner" id="authError"></div>
+      <div id="authRegisterFields" style="display:none">
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Your Name <span class="req">*</span></label>
+          <input type="text" id="a_name" placeholder="e.g. Anna Mueller" maxlength="200" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Email <span class="req">*</span></label>
+        <input type="email" id="a_email" placeholder="you@example.com" maxlength="254" />
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label>Password <span class="req">*</span></label>
+        <input type="password" id="a_password" placeholder="Min. 6 characters" />
+      </div>
+      <button class="btn-submit" id="btnAuth" onclick="submitAuth()" style="width:100%">Log in</button>
+      <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--ink-soft)">
+        <span id="authSwitchText">Don't have an account?</span>
+        <a href="#" id="authSwitchLink" onclick="switchAuthMode();return false" style="color:var(--accent);font-weight:600">Sign up</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+  // ── Auth state ──
+  let authToken = localStorage.getItem('zontik_token');
+  let authUser = JSON.parse(localStorage.getItem('zontik_user') || 'null');
+  let authMode = 'login'; // 'login' or 'register'
+
+  function setAuth(token, user) {
+    authToken = token;
+    authUser = user;
+    if (token) {
+      localStorage.setItem('zontik_token', token);
+      localStorage.setItem('zontik_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('zontik_token');
+      localStorage.removeItem('zontik_user');
+    }
+    updateAuthUI();
+  }
+
+  function updateAuthUI() {
+    const el = document.getElementById('navAuth');
+    if (authUser) {
+      el.innerHTML = `<div class="nav-user-pill">${esc(authUser.name)} <button onclick="logout()">Log out</button></div>`;
+    } else {
+      el.innerHTML = `<div class="nav-auth">
+        <button class="nav-auth-btn" onclick="openAuthModal('login')">Log in</button>
+        <button class="nav-auth-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="openAuthModal('register')">Sign up</button>
+      </div>`;
+    }
+  }
+
+  function logout() {
+    setAuth(null, null);
+    loadBusinesses(); // refresh cards to remove edit buttons
+  }
+
+  function openAuthModal(mode) {
+    authMode = mode;
+    document.getElementById('authError').style.display = 'none';
+    document.getElementById('a_email').value = '';
+    document.getElementById('a_password').value = '';
+    document.getElementById('a_name').value = '';
+    if (mode === 'register') {
+      document.getElementById('authModalTitle').textContent = 'Create Account';
+      document.getElementById('authRegisterFields').style.display = 'block';
+      document.getElementById('btnAuth').textContent = 'Sign up';
+      document.getElementById('authSwitchText').textContent = 'Already have an account?';
+      document.getElementById('authSwitchLink').textContent = 'Log in';
+    } else {
+      document.getElementById('authModalTitle').textContent = 'Log in';
+      document.getElementById('authRegisterFields').style.display = 'none';
+      document.getElementById('btnAuth').textContent = 'Log in';
+      document.getElementById('authSwitchText').textContent = "Don't have an account?";
+      document.getElementById('authSwitchLink').textContent = 'Sign up';
+    }
+    document.getElementById('authModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAuthModal() {
+    document.getElementById('authModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('authModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeAuthModal();
+  });
+
+  function switchAuthMode() {
+    openAuthModal(authMode === 'login' ? 'register' : 'login');
+  }
+
+  async function submitAuth() {
+    const errBanner = document.getElementById('authError');
+    errBanner.style.display = 'none';
+    const email = document.getElementById('a_email').value.trim();
+    const password = document.getElementById('a_password').value;
+    const name = document.getElementById('a_name').value.trim();
+
+    if (!email || !password) {
+      errBanner.textContent = 'Email and password are required';
+      errBanner.style.display = 'block';
+      return;
+    }
+    if (authMode === 'register' && !name) {
+      errBanner.textContent = 'Please enter your name';
+      errBanner.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('btnAuth');
+    btn.disabled = true;
+    btn.textContent = authMode === 'login' ? 'Logging in...' : 'Creating account...';
+
+    try {
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const body = authMode === 'login' ? { email, password } : { email, password, name };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errBanner.textContent = data.error || 'Something went wrong';
+        errBanner.style.display = 'block';
+      } else {
+        setAuth(data.token, data.user);
+        closeAuthModal();
+        loadBusinesses(); // refresh to show edit buttons
+      }
+    } catch {
+      errBanner.textContent = 'Network error — please try again';
+      errBanner.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  // Image preview helper
+  function previewImage(input, areaId) {
+    const area = document.getElementById(areaId);
+    const existing = area.querySelector('.preview-img');
+    if (existing) existing.remove();
+    if (input.files && input.files[0]) {
+      const img = document.createElement('img');
+      img.className = 'preview-img';
+      img.src = URL.createObjectURL(input.files[0]);
+      area.appendChild(img);
+    }
+  }
+
   let activeFilter = 'all';
 
   const categoryNames = {
@@ -1768,6 +2015,7 @@ nav ul a:hover { color: var(--accent); }
       if (!res.ok) return;
       const businesses = await res.json();
       const grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
       if (!businesses.length) {
         grid.innerHTML = `
           <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;">
@@ -1802,9 +2050,19 @@ nav ul a:hover { color: var(--accent); }
         card.dataset.city = b.city || '';
         card.dataset.price = b.price_range || '€';
         card.dataset.rating = avgRating.toString();
+        const bannerContent = b.product_photo
+          ? `<img class="card-product-photo" src="${esc(b.product_photo)}" alt="" loading="lazy"/>`
+          : `<div class="card-emoji">${esc(b.emoji || '🏪')}</div>`;
+        const logoHtml = b.logo
+          ? `<img class="card-logo" src="${esc(b.logo)}" alt="${esc(b.name)} logo" loading="lazy"/>`
+          : '';
+        const editBtn = (authUser && b.user_id === authUser.id)
+          ? `<button class="card-edit-btn" onclick="openEditModal(${b.id});event.stopPropagation()">Edit</button>`
+          : '';
+        const bodyClass = b.logo ? 'card-body card-body-with-logo' : 'card-body';
         card.innerHTML = `
-          <div class="card-banner"><div class="card-emoji">${esc(b.emoji || '🏪')}</div>${featured}</div>
-          <div class="card-body">
+          <div class="card-banner">${bannerContent}${logoHtml}${featured}${editBtn}</div>
+          <div class="${bodyClass}">
             <div class="card-category">${esc(categoryNames[b.category] || b.category)}</div>
             <div class="card-name">${esc(b.name)}</div>
             ${ratingHtml}
@@ -1830,18 +2088,23 @@ nav ul a:hover { color: var(--accent); }
 
   // ── Listing Modal ──
   function openModal() {
+    if (!authToken) {
+      openAuthModal('register');
+      return;
+    }
     document.getElementById('listModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
   function closeModal() {
     document.getElementById('listModal').classList.remove('open');
     document.body.style.overflow = '';
+    if (editingBusinessId) resetListModal();
   }
   document.getElementById('listModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeReviewModal(); }
+    if (e.key === 'Escape') { closeModal(); closeReviewModal(); closeAuthModal(); }
   });
 
   // ── Review Modal ──
@@ -2010,26 +2273,30 @@ nav ul a:hover { color: var(--accent); }
       return;
     }
 
-    const payload = {
-      name,
-      category: selectedCat,
-      description,
-      website,
-      city,
-      country,
-      contact_email: email,
-      contact_phone: document.getElementById('f_phone').value.trim() || null,
-      price_range: selectedPrice,
-      tags: document.getElementById('f_tags').value,
-      emoji: selectedEmoji,
-      year_founded: document.getElementById('f_year').value || null,
-      owner_name: document.getElementById('f_owner').value.trim() || null,
-      short_tagline: document.getElementById('f_tagline').value.trim() || null,
-      instagram: document.getElementById('f_instagram').value.trim() || null,
-      facebook: document.getElementById('f_facebook').value.trim() || null,
-      linkedin: document.getElementById('f_linkedin').value.trim() || null,
-      tiktok: document.getElementById('f_tiktok').value.trim() || null,
-    };
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('category', selectedCat);
+    formData.append('description', description);
+    formData.append('website', website);
+    formData.append('city', city);
+    formData.append('country', country);
+    formData.append('contact_email', email);
+    formData.append('contact_phone', document.getElementById('f_phone').value.trim());
+    formData.append('price_range', selectedPrice);
+    formData.append('tags', document.getElementById('f_tags').value);
+    formData.append('emoji', selectedEmoji);
+    formData.append('year_founded', document.getElementById('f_year').value);
+    formData.append('owner_name', document.getElementById('f_owner').value.trim());
+    formData.append('short_tagline', document.getElementById('f_tagline').value.trim());
+    formData.append('instagram', document.getElementById('f_instagram').value.trim());
+    formData.append('facebook', document.getElementById('f_facebook').value.trim());
+    formData.append('linkedin', document.getElementById('f_linkedin').value.trim());
+    formData.append('tiktok', document.getElementById('f_tiktok').value.trim());
+
+    const logoFile = document.getElementById('f_logo').files[0];
+    const productFile = document.getElementById('f_product_photo').files[0];
+    if (logoFile) formData.append('logo', logoFile);
+    if (productFile) formData.append('product_photo', productFile);
 
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
@@ -2038,8 +2305,8 @@ nav ul a:hover { color: var(--accent); }
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: { 'Authorization': 'Bearer ' + authToken },
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -2050,15 +2317,10 @@ nav ul a:hover { color: var(--accent); }
         return;
       }
 
-      document.getElementById('modalBody').innerHTML = `
-        <div class="form-success">
-          <div class="form-success-icon">🎉</div>
-          <div class="form-success-title">You're live on Zoncik!</div>
-          <div class="form-success-text">
-            <strong>${esc(name)}</strong> is now listed in the directory.<br/>
-            Close this dialog and refresh to see your business card. We'll reach out to <strong>${esc(email)}</strong> if we need anything.
-          </div>
-        </div>`;
+      closeModal();
+      resetListModal();
+      loadBusinesses();
+      alert('🎉 ' + name + ' is now live on Zoncik!');
     } catch {
       errBanner.textContent = 'Network error — please try again';
       errBanner.style.display = 'block';
@@ -2067,7 +2329,223 @@ nav ul a:hover { color: var(--accent); }
     }
   }
 
+  // ── Edit Business ──
+  let editingBusinessId = null;
+
+  async function openEditModal(bizId) {
+    if (!authToken) return;
+    try {
+      const res = await fetch(`/api/businesses/${bizId}`);
+      if (!res.ok) return alert('Could not load business data');
+      const b = await res.json();
+      editingBusinessId = bizId;
+
+      // Populate form fields
+      document.getElementById('f_name').value = b.name || '';
+      document.getElementById('f_tagline').value = b.short_tagline || '';
+      document.getElementById('f_desc').value = b.description || '';
+      document.getElementById('f_owner').value = b.owner_name || '';
+      document.getElementById('f_year').value = b.year_founded || '';
+      document.getElementById('f_tags').value = (b.tags || []).join(', ');
+      document.getElementById('f_website').value = b.website || '';
+      document.getElementById('f_email').value = b.contact_email || '';
+      document.getElementById('f_phone').value = b.contact_phone || '';
+      document.getElementById('f_instagram').value = b.instagram || '';
+      document.getElementById('f_facebook').value = b.facebook || '';
+      document.getElementById('f_linkedin').value = b.linkedin || '';
+      document.getElementById('f_tiktok').value = b.tiktok || '';
+
+      // Set category
+      selectedCat = b.category || '';
+      document.querySelectorAll('#catChips .cat-chip').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.cat === selectedCat);
+      });
+
+      // Set emoji
+      selectedEmoji = b.emoji || '🏪';
+      document.querySelectorAll('#emojiPicker .emoji-opt').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.emoji === selectedEmoji);
+      });
+
+      // Set price
+      selectedPrice = b.price_range || '€';
+      document.querySelectorAll('#priceOpts .price-opt').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.price === selectedPrice);
+      });
+
+      // Set country/city
+      await initCountryDropdown();
+      if (b.country) {
+        document.getElementById('f_country').value = b.country;
+        populateCities();
+        setTimeout(() => {
+          const citySelect = document.getElementById('f_city');
+          const cityExists = Array.from(citySelect.options).some(o => o.value === b.city);
+          if (cityExists) {
+            citySelect.value = b.city;
+          } else if (b.city) {
+            citySelect.value = '__other__';
+            showCityInput(citySelect);
+            const customInput = document.getElementById('f_city_custom');
+            if (customInput) customInput.value = b.city;
+          }
+        }, 100);
+      }
+
+      // Show existing images
+      ['logoUploadArea', 'photoUploadArea'].forEach(id => {
+        const area = document.getElementById(id);
+        const existing = area.querySelector('.preview-img');
+        if (existing) existing.remove();
+      });
+      if (b.logo) {
+        const img = document.createElement('img');
+        img.className = 'preview-img';
+        img.src = b.logo;
+        document.getElementById('logoUploadArea').appendChild(img);
+      }
+      if (b.product_photo) {
+        const img = document.createElement('img');
+        img.className = 'preview-img';
+        img.src = b.product_photo;
+        document.getElementById('photoUploadArea').appendChild(img);
+      }
+
+      // Clear file inputs
+      document.getElementById('f_logo').value = '';
+      document.getElementById('f_product_photo').value = '';
+
+      // Update modal title and button
+      document.querySelector('#listModal .modal-title').textContent = 'Edit Your Business';
+      document.getElementById('btnSubmit').textContent = 'Save Changes';
+      document.getElementById('btnSubmit').setAttribute('onclick', 'submitEditBusiness()');
+
+      document.getElementById('listModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    } catch {
+      alert('Error loading business data');
+    }
+  }
+
+  async function submitEditBusiness() {
+    const errBanner = document.getElementById('formError');
+    errBanner.style.display = 'none';
+
+    const name = document.getElementById('f_name').value.trim();
+    const description = document.getElementById('f_desc').value.trim();
+    let website = document.getElementById('f_website').value.trim();
+    const email = document.getElementById('f_email').value.trim();
+    const city = getSelectedCity();
+    const country = document.getElementById('f_country').value;
+
+    const errs = [];
+    if (!name) errs.push('Business Name');
+    if (!selectedCat) errs.push('Category');
+    if (!description) errs.push('Description');
+    if (!website) errs.push('Website');
+    if (!email) errs.push('Contact Email');
+    if (!country) errs.push('Country');
+    if (!city) errs.push('City');
+    if (errs.length) {
+      errBanner.textContent = `Please fill in: ${errs.join(', ')}`;
+      errBanner.style.display = 'block';
+      return;
+    }
+    if (website && !/^https?:\/\//i.test(website)) website = 'https://' + website;
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('category', selectedCat);
+    formData.append('description', description);
+    formData.append('website', website);
+    formData.append('city', city);
+    formData.append('country', country);
+    formData.append('contact_email', email);
+    formData.append('contact_phone', document.getElementById('f_phone').value.trim());
+    formData.append('price_range', selectedPrice);
+    formData.append('tags', document.getElementById('f_tags').value);
+    formData.append('emoji', selectedEmoji);
+    formData.append('year_founded', document.getElementById('f_year').value);
+    formData.append('owner_name', document.getElementById('f_owner').value.trim());
+    formData.append('short_tagline', document.getElementById('f_tagline').value.trim());
+    formData.append('instagram', document.getElementById('f_instagram').value.trim());
+    formData.append('facebook', document.getElementById('f_facebook').value.trim());
+    formData.append('linkedin', document.getElementById('f_linkedin').value.trim());
+    formData.append('tiktok', document.getElementById('f_tiktok').value.trim());
+
+    // Preserve existing images if no new file uploaded
+    const logoArea = document.getElementById('logoUploadArea');
+    const photoArea = document.getElementById('photoUploadArea');
+    const existingLogo = logoArea.querySelector('.preview-img');
+    const existingPhoto = photoArea.querySelector('.preview-img');
+    if (existingLogo && !document.getElementById('f_logo').files[0]) {
+      formData.append('existing_logo', existingLogo.src.replace(location.origin, ''));
+    }
+    if (existingPhoto && !document.getElementById('f_product_photo').files[0]) {
+      formData.append('existing_product_photo', existingPhoto.src.replace(location.origin, ''));
+    }
+
+    const logoFile = document.getElementById('f_logo').files[0];
+    const productFile = document.getElementById('f_product_photo').files[0];
+    if (logoFile) formData.append('logo', logoFile);
+    if (productFile) formData.append('product_photo', productFile);
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`/api/businesses/${editingBusinessId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + authToken },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errBanner.textContent = data.error || 'Something went wrong';
+        errBanner.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        return;
+      }
+      closeModal();
+      resetListModal();
+      loadBusinesses();
+    } catch {
+      errBanner.textContent = 'Network error — please try again';
+      errBanner.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+    }
+  }
+
+  function resetListModal() {
+    editingBusinessId = null;
+    document.querySelector('#listModal .modal-title').textContent = 'List Your Business';
+    document.getElementById('btnSubmit').textContent = 'Submit Listing';
+    document.getElementById('btnSubmit').setAttribute('onclick', 'submitBusiness()');
+    // Clear form
+    ['f_name','f_tagline','f_desc','f_owner','f_year','f_tags','f_website','f_email','f_phone',
+     'f_instagram','f_facebook','f_linkedin','f_tiktok','f_logo','f_product_photo'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    selectedCat = '';
+    selectedEmoji = '🏪';
+    selectedPrice = '€';
+    document.querySelectorAll('#catChips .cat-chip').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#emojiPicker .emoji-opt').forEach(b => b.classList.remove('selected'));
+    document.querySelector('#emojiPicker .emoji-opt').classList.add('selected');
+    document.querySelectorAll('#priceOpts .price-opt').forEach(b => b.classList.remove('selected'));
+    document.querySelector('#priceOpts .price-opt').classList.add('selected');
+    ['logoUploadArea','photoUploadArea'].forEach(id => {
+      const img = document.getElementById(id).querySelector('.preview-img');
+      if (img) img.remove();
+    });
+    document.getElementById('formError').style.display = 'none';
+  }
+
   // ── Init ──
+  updateAuthUI();
   initCountryDropdown();
   loadBusinesses();
 </script>

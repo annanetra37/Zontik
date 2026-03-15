@@ -123,6 +123,39 @@ async function migrate() {
     END $$;
   `);
 
+  // ── Users table ──
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            SERIAL PRIMARY KEY,
+      email         VARCHAR(254) NOT NULL UNIQUE,
+      password_hash VARCHAR(200) NOT NULL,
+      name          VARCHAR(200) NOT NULL,
+      created_at    TIMESTAMPTZ  DEFAULT NOW()
+    );
+  `);
+
+  // Add user_id to businesses (nullable for backwards compat)
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
+  // Add logo and product_photo columns to businesses
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS logo VARCHAR(500);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS product_photo VARCHAR(500);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
   // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
     "thespiceroute.at", "pixelsmith.de", "atelierloom.at",
