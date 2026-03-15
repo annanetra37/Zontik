@@ -1378,7 +1378,13 @@ nav ul a:hover { color: var(--accent); }
       const ratingOk = !minRating || parseFloat(card.dataset.rating) >= minRating;
       const show = catOk && locOk && searchOk && priceOk && ratingOk;
       card.classList.toggle('hidden', !show);
-      if (show) { visible++; card.style.animationDelay = (visible * 0.05) + 's'; }
+      if (show) {
+        visible++;
+        card.style.animation = 'none';
+        card.offsetHeight; // force reflow
+        card.style.animation = '';
+        card.style.animationDelay = (visible * 0.05) + 's';
+      }
     });
     document.getElementById('countLabel').textContent = 'Showing ' + visible + ' business' + (visible !== 1 ? 'es' : '');
     document.getElementById('sectionTitle').textContent =
