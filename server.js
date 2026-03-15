@@ -73,7 +73,7 @@ function normalizeUrl(url) {
   return url;
 }
 
-const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education"];
+const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "experiences"];
 
 // Health check
 app.get("/health", async (_req, res) => {
