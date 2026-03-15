@@ -221,7 +221,7 @@ app.get("/api/businesses", async (_req, res) => {
     const { rows } = await pool.query(
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
               b.price_range, b.tags, b.emoji, b.featured, b.year_founded,
-              b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
+              b.owner_name, b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
               b.logo, b.product_photo, b.user_id,
               COALESCE(r.avg_rating, 0) AS avg_rating,
               COALESCE(r.review_count, 0) AS review_count
