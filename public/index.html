@@ -390,7 +390,8 @@ nav ul a:hover { color: var(--accent); }
 }
 .sidebar-item:hover { background: var(--bg); color: var(--ink); }
 .sidebar-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
-.si-icon { font-size: 0.9rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
+.si-icon { font-size: 0.9rem; width: 1.2rem; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.si-icon svg { width: 16px; height: 16px; }
 .si-count {
   margin-left: auto; font-size: 0.72rem;
   color: var(--ink-soft); font-weight: 500;
@@ -952,15 +953,15 @@ nav ul a:hover { color: var(--accent); }
     <li class="nav-dropdown">
       <a href="#" class="nav-dropdown-toggle">Categories <span class="nav-chevron">▾</span></a>
       <div class="nav-dropdown-menu">
-        <a href="#" onclick="heroFilterFromNav('all');return false;">✦ All Businesses</a>
-        <a href="#" onclick="heroFilterFromNav('food');return false;">🛒 Food &amp; Hospitality</a>
-        <a href="#" onclick="heroFilterFromNav('tech');return false;">⚡ Tech &amp; Services</a>
-        <a href="#" onclick="heroFilterFromNav('craft');return false;">✦ Crafts &amp; Local</a>
-        <a href="#" onclick="heroFilterFromNav('fashion');return false;">◈ Fashion &amp; Jewelry</a>
-        <a href="#" onclick="heroFilterFromNav('health');return false;">◎ Wellness &amp; Care</a>
-        <a href="#" onclick="heroFilterFromNav('education');return false;">📚 Education</a>
-        <a href="#" onclick="heroFilterFromNav('travel');return false;">🌍 Travel</a>
-        <a href="#" onclick="heroFilterFromNav('experiences');return false;">⭐ Experiences</a>
+        <a href="#" onclick="heroFilterFromNav('all');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> All Businesses</a>
+        <a href="#" onclick="heroFilterFromNav('food');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-8 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg> Food &amp; Hospitality</a>
+        <a href="#" onclick="heroFilterFromNav('tech');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Tech &amp; Services</a>
+        <a href="#" onclick="heroFilterFromNav('craft');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Crafts &amp; Local</a>
+        <a href="#" onclick="heroFilterFromNav('fashion');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 8v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-3-6z"/><line x1="3" y1="8" x2="21" y2="8"/><path d="M16 12a4 4 0 0 1-8 0"/></svg> Fashion &amp; Jewelry</a>
+        <a href="#" onclick="heroFilterFromNav('health');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Wellness &amp; Care</a>
+        <a href="#" onclick="heroFilterFromNav('education');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Education</a>
+        <a href="#" onclick="heroFilterFromNav('travel');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Travel</a>
+        <a href="#" onclick="heroFilterFromNav('experiences');return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Experiences</a>
       </div>
     </li>
     <li><a href="#about">About</a></li>
@@ -985,11 +986,11 @@ nav ul a:hover { color: var(--accent); }
   <aside class="sidebar" id="sidebarContainer">
     <div class="sidebar-section" id="sidebarCategories">
       <div class="sidebar-heading">Category</div>
-      <button class="sidebar-item active" onclick="setFilter('all',this)"><span class="si-icon">✦</span> All Businesses<span class="si-count" id="catCountAll"></span></button>
+      <button class="sidebar-item active" onclick="setFilter('all',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> All Businesses<span class="si-count" id="catCountAll"></span></button>
     </div>
     <div class="sidebar-section" id="sidebarLocations">
       <div class="sidebar-heading">Location</div>
-      <button class="sidebar-item active" onclick="setLocation('all',this)"><span class="si-icon">📍</span> All locations</button>
+      <button class="sidebar-item active" onclick="setLocation('all',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> All locations</button>
     </div>
     <div class="sidebar-section" id="sidebarRating">
       <div class="sidebar-heading">Rating</div>
@@ -1447,7 +1448,15 @@ nav ul a:hover { color: var(--accent); }
   };
 
   const categoryIcons = {
-    all: '✦', food: '🛒', tech: '⚡', craft: '✦', fashion: '◈', health: '◎', education: '📚', travel: '🌍', experiences: '⭐'
+    all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-8 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',
+    tech: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+    craft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+    fashion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 8v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-3-6z"/><line x1="3" y1="8" x2="21" y2="8"/><path d="M16 12a4 4 0 0 1-8 0"/></svg>',
+    health: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    education: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+    travel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    experiences: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
   };
 
   // ── Sidebar filter handlers ──
@@ -1526,7 +1535,7 @@ nav ul a:hover { color: var(--accent); }
     // Category section
     const catSection = document.getElementById('sidebarCategories');
     catSection.innerHTML = '<div class="sidebar-heading">Category</div>';
-    catSection.innerHTML += '<button class="sidebar-item' + (activeFilter === 'all' ? ' active' : '') + '" onclick="setFilter(\'all\',this)"><span class="si-icon">✦</span> All Businesses<span class="si-count">' + businesses.length + '</span></button>';
+    catSection.innerHTML += '<button class="sidebar-item' + (activeFilter === 'all' ? ' active' : '') + '" onclick="setFilter(\'all\',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> All Businesses<span class="si-count">' + businesses.length + '</span></button>';
     Object.keys(categoryNames).forEach(cat => {
       if (cat === 'all' || !catCounts[cat]) return;
       catSection.innerHTML += '<button class="sidebar-item' + (activeFilter === cat ? ' active' : '') + '" onclick="setFilter(\'' + cat + '\',this)"><span class="si-icon">' + (categoryIcons[cat] || '✦') + '</span> ' + categoryNames[cat] + '<span class="si-count">' + catCounts[cat] + '</span></button>';
@@ -1535,10 +1544,10 @@ nav ul a:hover { color: var(--accent); }
     // Location section
     const locSection = document.getElementById('sidebarLocations');
     locSection.innerHTML = '<div class="sidebar-heading">Location</div>';
-    locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === 'all' ? ' active' : '') + '" onclick="setLocation(\'all\',this)"><span class="si-icon">📍</span> All locations</button>';
+    locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === 'all' ? ' active' : '') + '" onclick="setLocation(\'all\',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> All locations</button>';
     const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
     sortedCities.forEach(([city, count]) => {
-      locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === city ? ' active' : '') + '" onclick="setLocation(\'' + city.replace(/'/g, "\\'") + '\',this)"><span class="si-icon">📍</span> ' + esc(city) + '<span class="si-count">' + count + '</span></button>';
+      locSection.innerHTML += '<button class="sidebar-item' + (activeLocation === city ? ' active' : '') + '" onclick="setLocation(\'' + city.replace(/'/g, "\\'") + '\',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> ' + esc(city) + '<span class="si-count">' + count + '</span></button>';
     });
 
     // Show/hide rating section based on whether any business has reviews
