@@ -1600,9 +1600,9 @@ nav ul a:hover { color: var(--accent); }
           : '<div class="card-rating"><span class="card-rating-text">No reviews yet</span><button class="card-review-btn" onclick="openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Be the first!</button></div>';
 
         const bannerContent = b.product_photo
-          ? '<img class="card-product-photo" src="' + esc(b.product_photo) + '" alt="" loading="lazy"/>'
+          ? '<img class="card-product-photo" src="' + esc(b.product_photo) + '" alt="" loading="lazy" onerror="this.remove();this.parentElement.insertAdjacentHTML(\'afterbegin\',\'<div class=card-emoji>' + esc(b.emoji || '🏪') + '</div>\')"/>'
           : '<div class="card-emoji">' + esc(b.emoji || '🏪') + '</div>';
-        const logoHtml = b.logo ? '<img class="card-logo" src="' + esc(b.logo) + '" alt="' + esc(b.name) + ' logo" loading="lazy"/>' : '';
+        const logoHtml = b.logo ? '<img class="card-logo" src="' + esc(b.logo) + '" alt="' + esc(b.name) + ' logo" loading="lazy" onerror="this.remove()"/>' : '';
         const editBtn = (authUser && b.user_id === authUser.id) ? '<button class="card-edit-btn" onclick="openEditModal(' + b.id + ');event.stopPropagation()">Edit</button>' : '';
         const bodyClass = b.logo ? 'card-body card-body-with-logo' : 'card-body';
 
@@ -1959,13 +1959,13 @@ nav ul a:hover { color: var(--accent); }
     // Banner
     let bannerHtml = '';
     if (b.product_photo) {
-      bannerHtml += '<img src="' + esc(b.product_photo) + '" alt=""/>';
+      bannerHtml += '<img src="' + esc(b.product_photo) + '" alt="" onerror="this.remove();this.parentElement.insertAdjacentHTML(\'afterbegin\',\'<span class=detail-emoji>' + esc(b.emoji || '🏪') + '</span>\')"/>';
     } else {
       bannerHtml += '<span class="detail-emoji">' + esc(b.emoji || '🏪') + '</span>';
     }
     bannerHtml += '<button class="detail-close" onclick="closeDetailModal()">&times;</button>';
     if (b.logo) {
-      bannerHtml += '<img class="detail-logo" src="' + esc(b.logo) + '" alt=""/>';
+      bannerHtml += '<img class="detail-logo" src="' + esc(b.logo) + '" alt="" onerror="this.remove()"/>';
     }
     banner.innerHTML = bannerHtml;
 
