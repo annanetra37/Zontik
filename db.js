@@ -115,13 +115,14 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_reviews_business_id ON reviews(business_id);
   `);
 
-  // Add photo column to reviews if missing
+  // Add photo column to reviews if missing (TEXT for base64 data URLs)
   await p.query(`
     DO $$ BEGIN
-      ALTER TABLE reviews ADD COLUMN IF NOT EXISTS photo VARCHAR(500);
+      ALTER TABLE reviews ADD COLUMN IF NOT EXISTS photo TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
+  await p.query(`ALTER TABLE reviews ALTER COLUMN photo TYPE TEXT;`);
 
   // ── Users table ──
   await p.query(`
@@ -142,19 +143,22 @@ async function migrate() {
     END $$;
   `);
 
-  // Add logo and product_photo columns to businesses
+  // Add logo and product_photo columns to businesses (TEXT for base64 data URLs)
   await p.query(`
     DO $$ BEGIN
-      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS logo VARCHAR(500);
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS logo TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
   await p.query(`
     DO $$ BEGIN
-      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS product_photo VARCHAR(500);
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS product_photo TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
+  // Widen columns to TEXT if they were previously VARCHAR
+  await p.query(`ALTER TABLE businesses ALTER COLUMN logo TYPE TEXT;`);
+  await p.query(`ALTER TABLE businesses ALTER COLUMN product_photo TYPE TEXT;`);
 
   // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
