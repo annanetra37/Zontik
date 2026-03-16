@@ -990,7 +990,7 @@ nav ul a:hover { color: var(--accent); }
   </div>
   <div class="nav-search-box">
     <svg width="14" height="14" fill="none" stroke="#9896b0" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Search businesses, products, tags…" oninput="currentPage=1;filterCards()"/>
+    <input type="search" id="searchInput" name="search" placeholder="Search businesses, products, tags…" autocomplete="off" oninput="currentPage=1;filterCards()"/>
   </div>
   <ul>
     <li class="nav-dropdown">
@@ -2187,6 +2187,7 @@ nav ul a:hover { color: var(--accent); }
         '<a class="detail-visit" href="' + esc(b.website) + '" target="_blank" rel="noopener">Visit Website →</a>' +
         '<button class="detail-review-btn" onclick="closeDetailModal();openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Write Review</button>' +
         ((authUser && b.user_id === authUser.id) ? '<button class="detail-review-btn" onclick="closeDetailModal();openEditModal(' + b.id + ')">Edit Listing</button>' : '') +
+        ((authUser && authUser.is_admin) ? '<button class="detail-review-btn" id="adminFeaturedBtn" style="background:' + (b.featured ? 'var(--lemon);color:#705000;border:1.5px solid #f0d060' : 'var(--accent-soft);color:var(--accent)') + '" onclick="toggleFeatured(' + b.id + ',' + !b.featured + ')">' + (b.featured ? '★ Unfeature' : '☆ Feature') + '</button>' : '') +
       '</div>';
 
     document.getElementById('detailModal').classList.add('open');
@@ -2198,6 +2199,19 @@ nav ul a:hover { color: var(--accent); }
     document.body.style.overflow = '';
   }
   document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
+
+  async function toggleFeatured(bizId, featured) {
+    try {
+      const res = await fetch('/api/admin/businesses/' + bizId + '/featured', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured })
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || 'Failed'); return; }
+      closeDetailModal();
+      loadBusinesses();
+    } catch { alert('Network error'); }
+  }
 
   // ── Profile Modal ──
   let profileTab = 'businesses';

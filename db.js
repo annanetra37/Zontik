@@ -135,6 +135,14 @@ async function migrate() {
     );
   `);
 
+  // Add is_admin flag to users
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
   // Add user_id to businesses (nullable for backwards compat)
   await p.query(`
     DO $$ BEGIN
