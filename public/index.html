@@ -647,9 +647,16 @@ nav ul a:hover { color: var(--accent); }
   position: relative; overflow: hidden;
 }
 .img-upload-area:hover { border-color: var(--accent); }
-.img-upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.img-upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 1; }
 .img-upload-area .preview-img { max-height: 120px; max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; }
 .img-upload-label { color: var(--ink-soft); font-size: 0.85rem; }
+.img-remove-btn {
+  position: relative; z-index: 2; display: inline-block; margin-top: 0.4rem;
+  background: #ff4d4f; color: #fff; border: none; border-radius: 0.5rem;
+  padding: 0.25rem 0.7rem; font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.img-remove-btn:hover { background: #d9363e; }
 
 /* ── CTA ── */
 .cta-wrap { width: 100%; margin: 0 auto 5rem; padding: 0 1.5rem; }
@@ -1431,6 +1438,8 @@ nav ul a:hover { color: var(--accent); }
     const area = document.getElementById(areaId);
     const existing = area.querySelector('.preview-img');
     if (existing) existing.remove();
+    const existingBtn = area.querySelector('.img-remove-btn');
+    if (existingBtn) existingBtn.remove();
     if (input.files && input.files[0]) {
       if (input.files[0].size > 5 * 1024 * 1024) {
         alert('File is too large. Maximum size is 5MB.');
@@ -1439,7 +1448,29 @@ nav ul a:hover { color: var(--accent); }
       }
       const img = document.createElement('img'); img.className = 'preview-img';
       img.src = URL.createObjectURL(input.files[0]); area.appendChild(img);
+      addRemoveBtn(area, areaId);
     }
+  }
+
+  function addRemoveBtn(area, areaId) {
+    if (area.querySelector('.img-remove-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'img-remove-btn';
+    btn.textContent = '✕ Remove';
+    btn.onclick = function(e) { e.stopPropagation(); removeImage(areaId); };
+    area.appendChild(btn);
+  }
+
+  function removeImage(areaId) {
+    const area = document.getElementById(areaId);
+    const img = area.querySelector('.preview-img');
+    if (img) img.remove();
+    const btn = area.querySelector('.img-remove-btn');
+    if (btn) btn.remove();
+    const fileId = areaId === 'logoUploadArea' ? 'f_logo' : 'f_product_photo';
+    document.getElementById(fileId).value = '';
+    area.dataset.removed = 'true';
   }
 
   // ── State ──
@@ -1867,9 +1898,14 @@ nav ul a:hover { color: var(--accent); }
           else if (b.city) { citySelect.value = '__other__'; showCityInput(citySelect); const ci = document.getElementById('f_city_custom'); if (ci) ci.value = b.city; }
         }, 100);
       }
-      ['logoUploadArea','photoUploadArea'].forEach(id => { const existing = document.getElementById(id).querySelector('.preview-img'); if (existing) existing.remove(); });
-      if (b.logo) { const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.logo; document.getElementById('logoUploadArea').appendChild(img); }
-      if (b.product_photo) { const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.product_photo; document.getElementById('photoUploadArea').appendChild(img); }
+      ['logoUploadArea','photoUploadArea'].forEach(id => {
+        const area = document.getElementById(id);
+        const existing = area.querySelector('.preview-img'); if (existing) existing.remove();
+        const existingBtn = area.querySelector('.img-remove-btn'); if (existingBtn) existingBtn.remove();
+        area.dataset.removed = '';
+      });
+      if (b.logo) { const area = document.getElementById('logoUploadArea'); const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.logo; area.appendChild(img); addRemoveBtn(area, 'logoUploadArea'); }
+      if (b.product_photo) { const area = document.getElementById('photoUploadArea'); const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.product_photo; area.appendChild(img); addRemoveBtn(area, 'photoUploadArea'); }
       document.getElementById('f_logo').value = ''; document.getElementById('f_product_photo').value = '';
       document.querySelector('#listModal .modal-title').textContent = 'Edit Your Business';
       document.getElementById('btnSubmit').textContent = 'Save Changes';
@@ -1916,8 +1952,8 @@ nav ul a:hover { color: var(--accent); }
     const photoArea = document.getElementById('photoUploadArea');
     const existingLogo = logoArea.querySelector('.preview-img');
     const existingPhoto = photoArea.querySelector('.preview-img');
-    if (existingLogo && !document.getElementById('f_logo').files[0]) formData.append('keep_logo', 'true');
-    if (existingPhoto && !document.getElementById('f_product_photo').files[0]) formData.append('keep_product_photo', 'true');
+    if (existingLogo && !document.getElementById('f_logo').files[0] && logoArea.dataset.removed !== 'true') formData.append('keep_logo', 'true');
+    if (existingPhoto && !document.getElementById('f_product_photo').files[0] && photoArea.dataset.removed !== 'true') formData.append('keep_product_photo', 'true');
     const logoFile = document.getElementById('f_logo').files[0];
     const productFile = document.getElementById('f_product_photo').files[0];
     if (logoFile) formData.append('logo', logoFile);
@@ -1945,7 +1981,7 @@ nav ul a:hover { color: var(--accent); }
     document.querySelector('#emojiPicker .emoji-opt').classList.add('selected');
     document.querySelectorAll('#priceOpts .price-opt').forEach(b => b.classList.remove('selected'));
     document.querySelector('#priceOpts .price-opt').classList.add('selected');
-    ['logoUploadArea','photoUploadArea'].forEach(id => { const img = document.getElementById(id).querySelector('.preview-img'); if (img) img.remove(); });
+    ['logoUploadArea','photoUploadArea'].forEach(id => { const area = document.getElementById(id); const img = area.querySelector('.preview-img'); if (img) img.remove(); const btn = area.querySelector('.img-remove-btn'); if (btn) btn.remove(); area.dataset.removed = ''; });
     document.getElementById('formError').style.display = 'none';
   }
 
