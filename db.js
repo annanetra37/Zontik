@@ -168,6 +168,14 @@ async function migrate() {
     END $$;
   `);
 
+  // Add address column (optional street address)
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS address VARCHAR(500);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
   // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
     "thespiceroute.at", "pixelsmith.de", "atelierloom.at",

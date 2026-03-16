@@ -267,7 +267,7 @@ app.get("/api/businesses", async (_req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
-              b.price_range, b.tags, b.emoji, b.featured, b.pin_order, b.year_founded,
+              b.address, b.price_range, b.tags, b.emoji, b.featured, b.pin_order, b.year_founded,
               b.owner_name, b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
               LEFT(b.logo, 512) AS logo_prefix,
               LEFT(b.product_photo, 512) AS photo_prefix,
@@ -309,7 +309,7 @@ app.post("/api/businesses", authRequired, upload.fields([
   }
 
   const {
-    name, category, description, city, country,
+    name, category, description, city, country, address,
     contact_email, contact_phone, price_range, tags, emoji,
     year_founded, owner_name, short_tagline,
     instagram, facebook, linkedin, tiktok,
@@ -371,15 +371,15 @@ app.post("/api/businesses", authRequired, upload.fields([
   try {
     await pool.query(
       `INSERT INTO businesses
-        (name, category, description, website, website_domain, city, country,
+        (name, category, description, website, website_domain, city, country, address,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
          instagram, facebook, linkedin, tiktok, approved,
          user_id, logo, product_photo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,TRUE,$20,$21,$22)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,TRUE,$21,$22,$23)`,
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
-        city.trim(), (country || "").trim(),
+        city.trim(), (country || "").trim(), address?.trim() || null,
         contact_email.trim(), contact_phone?.trim() || null,
         price_range || "€",
         tagArray, emoji || "🏪",
@@ -418,7 +418,7 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   if (biz[0].user_id !== req.user.id) return res.status(403).json({ error: "You can only edit your own businesses" });
 
   const {
-    name, category, description, city, country,
+    name, category, description, city, country, address,
     contact_email, contact_phone, price_range, tags, emoji,
     year_founded, owner_name, short_tagline,
     instagram, facebook, linkedin, tiktok,
@@ -465,14 +465,14 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
     await pool.query(
       `UPDATE businesses SET
         name=$1, category=$2, description=$3, website=$4, website_domain=$5,
-        city=$6, country=$7, contact_email=$8, contact_phone=$9,
-        price_range=$10, tags=$11, emoji=$12, year_founded=$13,
-        owner_name=$14, short_tagline=$15, instagram=$16, facebook=$17,
-        linkedin=$18, tiktok=$19, logo=$20, product_photo=$21
-       WHERE id=$22`,
+        city=$6, country=$7, address=$8, contact_email=$9, contact_phone=$10,
+        price_range=$11, tags=$12, emoji=$13, year_founded=$14,
+        owner_name=$15, short_tagline=$16, instagram=$17, facebook=$18,
+        linkedin=$19, tiktok=$20, logo=$21, product_photo=$22
+       WHERE id=$23`,
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
-        city.trim(), (country || "").trim(),
+        city.trim(), (country || "").trim(), address?.trim() || null,
         contact_email.trim(), contact_phone?.trim() || null,
         price_range || "€", tagArray, emoji || "🏪",
         year_founded ? parseInt(year_founded, 10) : null,
@@ -499,7 +499,7 @@ app.get("/api/businesses/:id", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, category, description, website, city, country,
+      `SELECT id, name, category, description, website, city, country, address,
               contact_email, contact_phone, price_range, tags, emoji,
               year_founded, owner_name, short_tagline,
               instagram, facebook, linkedin, tiktok, user_id,
