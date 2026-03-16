@@ -11,8 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "zontik-secret-change-in-prod";
 const multer = require("multer");
 
 const upload = multer({
-  dest: path.join(__dirname, "public", "uploads"),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, fieldSize: 10 * 1024 * 1024 }, // 5MB files, 10MB fields (for base64 data URLs)
   fileFilter: (_req, file, cb) => {
     if (/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Only JPEG, PNG, GIF, and WebP images are allowed"));
@@ -112,12 +112,10 @@ function authOptional(req, _res, next) {
   next();
 }
 
-// Helper: save an uploaded file with proper extension, return public path
-function saveUploadedFile(file) {
-  const ext = file.mimetype.split("/")[1] === "jpeg" ? "jpg" : file.mimetype.split("/")[1];
-  const newName = file.filename + "." + ext;
-  fs.renameSync(file.path, file.path + "." + ext);
-  return "/uploads/" + newName;
+// Helper: convert uploaded file buffer to base64 data URL
+function fileToDataUrl(file) {
+  const base64 = file.buffer.toString("base64");
+  return `data:${file.mimetype};base64,${base64}`;
 }
 
 // ── Auth: Register ──
@@ -309,8 +307,8 @@ app.post("/api/businesses", authRequired, upload.fields([
   // Handle image uploads
   let logoPath = null;
   let productPhotoPath = null;
-  if (req.files?.logo?.[0]) logoPath = saveUploadedFile(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = saveUploadedFile(req.files.product_photo[0]);
+  if (req.files?.logo?.[0]) logoPath = fileToDataUrl(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoPath = fileToDataUrl(req.files.product_photo[0]);
 
   console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
@@ -404,8 +402,8 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   // Handle image uploads (keep existing if not re-uploaded)
   let logoPath = req.body.existing_logo || null;
   let productPhotoPath = req.body.existing_product_photo || null;
-  if (req.files?.logo?.[0]) logoPath = saveUploadedFile(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = saveUploadedFile(req.files.product_photo[0]);
+  if (req.files?.logo?.[0]) logoPath = fileToDataUrl(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoPath = fileToDataUrl(req.files.product_photo[0]);
 
   try {
     await pool.query(
@@ -496,7 +494,7 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
 
   // Save uploaded photo
   let photoPath = null;
-  if (req.file) photoPath = saveUploadedFile(req.file);
+  if (req.file) photoPath = fileToDataUrl(req.file);
 
   try {
     const { rows } = await pool.query(
