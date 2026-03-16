@@ -535,6 +535,20 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
 // Serve static files from public/
 app.use(express.static(path.join(__dirname, "public")));
 
+// Multer error handler
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File is too large. Maximum size is 5MB.' });
+    }
+    return res.status(400).json({ error: 'File upload error: ' + err.message });
+  }
+  if (err && err.message && err.message.includes('image')) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+});
+
 // SPA fallback
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
