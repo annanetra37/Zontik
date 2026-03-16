@@ -1916,8 +1916,8 @@ nav ul a:hover { color: var(--accent); }
     const photoArea = document.getElementById('photoUploadArea');
     const existingLogo = logoArea.querySelector('.preview-img');
     const existingPhoto = photoArea.querySelector('.preview-img');
-    if (existingLogo && !document.getElementById('f_logo').files[0]) formData.append('existing_logo', existingLogo.src.replace(location.origin, ''));
-    if (existingPhoto && !document.getElementById('f_product_photo').files[0]) formData.append('existing_product_photo', existingPhoto.src.replace(location.origin, ''));
+    if (existingLogo && !document.getElementById('f_logo').files[0]) formData.append('keep_logo', 'true');
+    if (existingPhoto && !document.getElementById('f_product_photo').files[0]) formData.append('keep_product_photo', 'true');
     const logoFile = document.getElementById('f_logo').files[0];
     const productFile = document.getElementById('f_product_photo').files[0];
     if (logoFile) formData.append('logo', logoFile);
