@@ -990,7 +990,10 @@ nav ul a:hover { color: var(--accent); }
   </div>
   <div class="nav-search-box">
     <svg width="14" height="14" fill="none" stroke="#9896b0" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="search" id="searchInput" name="search" placeholder="Search businesses, products, tags…" autocomplete="off" oninput="currentPage=1;filterCards()"/>
+    <!-- hidden fields absorb browser autofill so the search box stays clean -->
+    <input type="text" name="prevent_autofill" style="display:none" tabindex="-1" aria-hidden="true" autocomplete="username" />
+    <input type="password" name="prevent_autofill_pw" style="display:none" tabindex="-1" aria-hidden="true" autocomplete="current-password" />
+    <input type="search" id="searchInput" name="search" placeholder="Search businesses, products, tags…" autocomplete="off" role="searchbox" oninput="currentPage=1;filterCards()"/>
   </div>
   <ul>
     <li class="nav-dropdown">
