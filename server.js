@@ -80,6 +80,17 @@ function fileToBase64(file) {
   return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 }
 
+// Helper: resolve image field to a public URL for the frontend.
+// For listings we use a prefix (LEFT(col, 8)) to avoid loading full base64 blobs.
+// For single business detail we have the full value.
+function resolveImageUrl(id, field, valueOrPrefix) {
+  if (!valueOrPrefix) return null;
+  // External URL — return directly
+  if (/^https?:\/\//i.test(valueOrPrefix)) return valueOrPrefix;
+  // base64 data URL — serve through our image endpoint
+  return `/api/images/${id}/${field}`;
+}
+
 // ── API: Serve images from DB as public URLs ──
 app.get("/api/images/:id/:field", async (req, res) => {
   const pool = getPool();
@@ -93,6 +104,14 @@ app.get("/api/images/:id/:field", async (req, res) => {
     if (!rows.length || !rows[0][field]) return res.status(404).end();
 
     const dataUrl = rows[0][field];
+
+    // If the stored value is an external URL, redirect to it
+    if (/^https?:\/\//i.test(dataUrl)) {
+      res.set("Cache-Control", "public, max-age=86400");
+      return res.redirect(dataUrl);
+    }
+
+    // Otherwise treat as base64 data URL
     const match = dataUrl.match(/^data:(image\/[\w+.-]+);base64,([\s\S]+)$/);
     if (!match) return res.status(404).end();
 
@@ -212,8 +231,8 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
               b.price_range, b.tags, b.emoji,
-              (b.logo IS NOT NULL) AS has_logo,
-              (b.product_photo IS NOT NULL) AS has_product_photo,
+              LEFT(b.logo, 512) AS logo_prefix,
+              LEFT(b.product_photo, 512) AS photo_prefix,
               COALESCE(r.avg_rating, 0) AS avg_rating,
               COALESCE(r.review_count, 0) AS review_count
        FROM businesses b
@@ -227,11 +246,10 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
        ORDER BY b.created_at DESC`,
       [req.user.id]
     );
-    // Add public image URLs
     rows.forEach(r => {
-      r.logo = r.has_logo ? `/api/images/${r.id}/logo` : null;
-      r.product_photo = r.has_product_photo ? `/api/images/${r.id}/product_photo` : null;
-      delete r.has_logo; delete r.has_product_photo;
+      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix);
+      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix);
+      delete r.logo_prefix; delete r.photo_prefix;
     });
     res.json(rows);
   } catch (err) {
@@ -251,8 +269,8 @@ app.get("/api/businesses", async (_req, res) => {
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
               b.price_range, b.tags, b.emoji, b.featured, b.pin_order, b.year_founded,
               b.owner_name, b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
-              (b.logo IS NOT NULL) AS has_logo,
-              (b.product_photo IS NOT NULL) AS has_product_photo,
+              LEFT(b.logo, 512) AS logo_prefix,
+              LEFT(b.product_photo, 512) AS photo_prefix,
               b.user_id,
               COALESCE(r.avg_rating, 0) AS avg_rating,
               COALESCE(r.review_count, 0) AS review_count
@@ -267,11 +285,10 @@ app.get("/api/businesses", async (_req, res) => {
        WHERE b.approved = TRUE
        ORDER BY b.pin_order DESC, b.featured DESC, b.created_at DESC`
     );
-    // Add public image URLs
     rows.forEach(r => {
-      r.logo = r.has_logo ? `/api/images/${r.id}/logo` : null;
-      r.product_photo = r.has_product_photo ? `/api/images/${r.id}/product_photo` : null;
-      delete r.has_logo; delete r.has_product_photo;
+      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix);
+      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix);
+      delete r.logo_prefix; delete r.photo_prefix;
     });
     res.json(rows);
   } catch (err) {
@@ -486,16 +503,16 @@ app.get("/api/businesses/:id", async (req, res) => {
               contact_email, contact_phone, price_range, tags, emoji,
               year_founded, owner_name, short_tagline,
               instagram, facebook, linkedin, tiktok, user_id,
-              (logo IS NOT NULL) AS has_logo,
-              (product_photo IS NOT NULL) AS has_product_photo
+              LEFT(logo, 512) AS logo_prefix,
+              LEFT(product_photo, 512) AS photo_prefix
        FROM businesses WHERE id = $1`,
       [id]
     );
     if (!rows.length) return res.status(404).json({ error: "Business not found" });
     const b = rows[0];
-    b.logo = b.has_logo ? `/api/images/${b.id}/logo` : null;
-    b.product_photo = b.has_product_photo ? `/api/images/${b.id}/product_photo` : null;
-    delete b.has_logo; delete b.has_product_photo;
+    b.logo = resolveImageUrl(b.id, 'logo', b.logo_prefix);
+    b.product_photo = resolveImageUrl(b.id, 'product_photo', b.photo_prefix);
+    delete b.logo_prefix; delete b.photo_prefix;
     res.json(b);
   } catch (err) {
     console.error("GET /api/businesses/:id error:", err.message);
