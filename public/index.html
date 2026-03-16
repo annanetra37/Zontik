@@ -103,6 +103,9 @@ nav ul { display: flex; gap: 2rem; list-style: none; align-items: center; margin
   gap: 0.1rem;
 }
 .nav-dropdown:hover .nav-dropdown-menu { display: flex; }
+.nav-dropdown-menu::before {
+  content: ''; position: absolute; top: -0.75rem; left: 0; right: 0; height: 0.75rem;
+}
 .nav-dropdown-menu a {
   display: flex; align-items: center; gap: 0.6rem;
   padding: 0.55rem 0.85rem; border-radius: 0.6rem;
@@ -831,6 +834,31 @@ nav ul a:hover { color: var(--accent); }
   .footer-bottom { flex-direction: column; text-align: center; }
 }
 .card.hidden { display: none; }
+.card.page-hidden { display: none; }
+
+/* ── PAGINATION ── */
+.pagination {
+  display: flex; justify-content: center; align-items: center; gap: 0.4rem;
+  margin-top: 2rem; padding: 1rem 0;
+}
+.pagination button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 600;
+  min-width: 38px; height: 38px;
+  border-radius: 0.6rem; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--ink-mid);
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pagination button:hover { border-color: var(--accent); color: var(--accent); }
+.pagination button.active {
+  background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
+}
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-info {
+  font-size: 0.78rem; color: var(--ink-soft); font-weight: 600;
+  margin: 0 0.5rem;
+}
 @media (max-width: 860px) {
   .page-body { grid-template-columns: 1fr; }
   .sidebar { position: static; }
@@ -962,7 +990,7 @@ nav ul a:hover { color: var(--accent); }
   </div>
   <div class="nav-search-box">
     <svg width="14" height="14" fill="none" stroke="#9896b0" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Search businesses, products, tags…" oninput="filterCards()"/>
+    <input type="text" id="searchInput" placeholder="Search businesses, products, tags…" oninput="currentPage=1;filterCards()"/>
   </div>
   <ul>
     <li class="nav-dropdown">
@@ -1044,6 +1072,7 @@ nav ul a:hover { color: var(--accent); }
     <div class="grid" id="cardGrid">
     <!-- All cards loaded dynamically from the database -->
     </div>
+    <div class="pagination" id="pagination"></div>
   </section>
 </div><!-- end page-body -->
 <!-- ABOUT -->
@@ -1478,6 +1507,8 @@ nav ul a:hover { color: var(--accent); }
   let activeLocation = 'all';
   let activeRatingFilter = 0;
   let allBusinesses = [];
+  let currentPage = 1;
+  const CARDS_PER_PAGE = 18;
 
   const categoryNames = {
     all: 'All Businesses',
@@ -1508,24 +1539,28 @@ nav ul a:hover { color: var(--accent); }
     activeFilter = cat;
     btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    currentPage = 1;
     filterCards();
   }
   function setLocation(city, btn) {
     activeLocation = city;
     btn.closest('.sidebar-section').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    currentPage = 1;
     filterCards();
   }
   function setRatingFilter(min, btn) {
     activeRatingFilter = min;
     btn.closest('.rating-filters').querySelectorAll('.rating-bar').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    currentPage = 1;
     filterCards();
   }
   function togglePrice(btn) {
     const wasActive = btn.classList.contains('active');
     document.querySelectorAll('.price-chip').forEach(c => c.classList.remove('active'));
     if (!wasActive) btn.classList.add('active');
+    currentPage = 1;
     filterCards();
   }
 
@@ -1535,8 +1570,68 @@ nav ul a:hover { color: var(--accent); }
       const oc = b.getAttribute('onclick') || '';
       b.classList.toggle('active', oc.includes("'" + cat + "'"));
     });
+    currentPage = 1;
     filterCards();
     document.getElementById('directory').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Get filtered businesses excluding one filter dimension (for cascading filter counts)
+  function getFilteredBusinesses(excludeFilter) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const activeChip = document.querySelector('.price-chip.active');
+    const activePrice = activeChip ? activeChip.textContent.trim() : null;
+    return allBusinesses.filter(b => {
+      const catOk = excludeFilter === 'category' || activeFilter === 'all' || b.category === activeFilter;
+      const locOk = excludeFilter === 'location' || activeLocation === 'all' || (b.city || '') === activeLocation;
+      const searchOk = !q || b.name.toLowerCase().includes(q) || (b.tags || []).join(' ').toLowerCase().includes(q);
+      const priceOk = excludeFilter === 'price' || !activePrice || (b.price_range || '€') === activePrice;
+      const ratingOk = excludeFilter === 'rating' || !activeRatingFilter || (parseFloat(b.avg_rating) || 0) >= activeRatingFilter;
+      return catOk && locOk && searchOk && priceOk && ratingOk;
+    });
+  }
+
+  // Update sidebar filter counts based on currently active filters
+  function updateFilterCounts() {
+    // Update category counts (exclude category filter to show what's available)
+    const forCats = getFilteredBusinesses('category');
+    const catCounts = {};
+    forCats.forEach(b => { catCounts[b.category] = (catCounts[b.category] || 0) + 1; });
+    document.querySelectorAll('#sidebarCategories .sidebar-item').forEach(btn => {
+      const match = (btn.getAttribute('onclick') || '').match(/setFilter\('(\w+)'/);
+      if (!match) return;
+      const cat = match[1];
+      const countEl = btn.querySelector('.si-count');
+      const count = cat === 'all' ? forCats.length : (catCounts[cat] || 0);
+      if (countEl) countEl.textContent = count;
+      if (cat !== 'all') btn.style.display = count === 0 ? 'none' : '';
+    });
+
+    // Update location counts (exclude location filter)
+    const forLocs = getFilteredBusinesses('location');
+    const cityCounts = {};
+    forLocs.forEach(b => { if (b.city) cityCounts[b.city] = (cityCounts[b.city] || 0) + 1; });
+    document.querySelectorAll('#sidebarLocations .sidebar-item').forEach(btn => {
+      const match = (btn.getAttribute('onclick') || '').match(/setLocation\('([^']+)'/);
+      if (!match) return;
+      const city = match[1];
+      const countEl = btn.querySelector('.si-count');
+      if (city === 'all') { if (countEl) countEl.textContent = ''; }
+      else {
+        const count = cityCounts[city] || 0;
+        if (countEl) countEl.textContent = count;
+        btn.style.display = count === 0 ? 'none' : '';
+      }
+    });
+
+    // Update price chip counts
+    const forPrices = getFilteredBusinesses('price');
+    const priceCounts = {};
+    forPrices.forEach(b => { const p = b.price_range || '€'; priceCounts[p] = (priceCounts[p] || 0) + 1; });
+    document.querySelectorAll('.price-chip').forEach(chip => {
+      const price = chip.textContent.trim();
+      const count = priceCounts[price] || 0;
+      chip.style.display = count === 0 ? 'none' : '';
+    });
   }
 
   function filterCards() {
@@ -1545,7 +1640,7 @@ nav ul a:hover { color: var(--accent); }
     const activeChip = document.querySelector('.price-chip.active');
     const activePrice = activeChip ? activeChip.textContent.trim() : null;
     const minRating = activeRatingFilter;
-    let visible = 0;
+    const visibleCards = [];
     cards.forEach(card => {
       const catOk = activeFilter === 'all' || card.dataset.category === activeFilter;
       const locOk = activeLocation === 'all' || card.dataset.city === activeLocation;
@@ -1554,18 +1649,59 @@ nav ul a:hover { color: var(--accent); }
       const ratingOk = !minRating || parseFloat(card.dataset.rating) >= minRating;
       const show = catOk && locOk && searchOk && priceOk && ratingOk;
       card.classList.toggle('hidden', !show);
-      if (show) {
-        visible++;
+      if (show) visibleCards.push(card);
+    });
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(visibleCards.length / CARDS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * CARDS_PER_PAGE;
+    const end = start + CARDS_PER_PAGE;
+    visibleCards.forEach((card, i) => {
+      const onPage = i >= start && i < end;
+      card.classList.toggle('page-hidden', !onPage);
+      if (onPage) {
+        const idx = i - start;
         card.style.animation = 'none';
-        card.offsetHeight; // force reflow
+        card.offsetHeight;
         card.style.animation = '';
-        card.style.animationDelay = (visible * 0.05) + 's';
+        card.style.animationDelay = (idx * 0.05) + 's';
       }
     });
-    document.getElementById('countLabel').textContent = 'Showing ' + visible + ' business' + (visible !== 1 ? 'es' : '');
+
+    document.getElementById('countLabel').textContent = 'Showing ' + visibleCards.length + ' business' + (visibleCards.length !== 1 ? 'es' : '');
     document.getElementById('sectionTitle').textContent =
       activeFilter !== 'all' ? (categoryNames[activeFilter] || 'All Businesses') :
       activeLocation !== 'all' ? ('Businesses in ' + activeLocation) : 'All Businesses';
+
+    renderPagination(visibleCards.length, totalPages);
+    updateFilterCounts();
+  }
+
+  function renderPagination(total, totalPages) {
+    const container = document.getElementById('pagination');
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+    let html = '<button onclick="goToPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>&lsaquo;</button>';
+    const maxButtons = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+    if (startPage > 1) { html += '<button onclick="goToPage(1)">1</button>'; if (startPage > 2) html += '<span class="pagination-info">…</span>'; }
+    for (let i = startPage; i <= endPage; i++) {
+      html += '<button onclick="goToPage(' + i + ')"' + (i === currentPage ? ' class="active"' : '') + '>' + i + '</button>';
+    }
+    if (endPage < totalPages) { if (endPage < totalPages - 1) html += '<span class="pagination-info">…</span>'; html += '<button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>'; }
+    html += '<button onclick="goToPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>&rsaquo;</button>';
+    container.innerHTML = html;
+  }
+
+  function goToPage(page) {
+    const totalVisible = document.querySelectorAll('.card:not(.hidden)').length;
+    const totalPages = Math.max(1, Math.ceil(totalVisible / CARDS_PER_PAGE));
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    filterCards();
+    document.getElementById('directory').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // ── Build sidebar dynamically ──
@@ -1624,6 +1760,7 @@ nav ul a:hover { color: var(--accent); }
       businesses.forEach(b => {
         const tags = (b.tags || []).map(t => '<span class="tag">' + esc(t) + '</span>').join('');
         const featured = b.featured ? '<span class="badge-featured">★ Featured</span>' : '';
+        const pinned = (b.pin_order > 0 && !b.featured) ? '<span class="badge-featured" style="background:#e8f4ff;color:#2068b0;border-color:#b8d8f8">📌 Pinned</span>' : '';
         const avgRating = parseFloat(b.avg_rating) || 0;
         const reviewCount = parseInt(b.review_count) || 0;
         const ratingHtml = reviewCount > 0
@@ -1648,7 +1785,7 @@ nav ul a:hover { color: var(--accent); }
         card.dataset.bizId = b.id;
         card.onclick = function(e) { if (!e.target.closest('.card-edit-btn') && !e.target.closest('.card-review-btn')) openDetailModal(b.id); };
         card.innerHTML =
-          '<div class="card-banner">' + bannerContent + logoHtml + featured + editBtn + '</div>' +
+          '<div class="card-banner">' + bannerContent + logoHtml + featured + pinned + editBtn + '</div>' +
           '<div class="' + bodyClass + '">' +
             '<div class="card-category">' + esc(categoryNames[b.category] || b.category) + '</div>' +
             '<div class="card-name">' + esc(b.name) + '</div>' +
