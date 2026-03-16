@@ -93,7 +93,7 @@ app.get("/api/images/:id/:field", async (req, res) => {
     if (!rows.length || !rows[0][field]) return res.status(404).end();
 
     const dataUrl = rows[0][field];
-    const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+    const match = dataUrl.match(/^data:(image\/[\w+.-]+);base64,([\s\S]+)$/);
     if (!match) return res.status(404).end();
 
     res.set("Content-Type", match[1]);
@@ -249,7 +249,7 @@ app.get("/api/businesses", async (_req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
-              b.price_range, b.tags, b.emoji, b.featured, b.year_founded,
+              b.price_range, b.tags, b.emoji, b.featured, b.pin_order, b.year_founded,
               b.owner_name, b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
               (b.logo IS NOT NULL) AS has_logo,
               (b.product_photo IS NOT NULL) AS has_product_photo,
@@ -265,7 +265,7 @@ app.get("/api/businesses", async (_req, res) => {
          GROUP BY business_id
        ) r ON r.business_id = b.id
        WHERE b.approved = TRUE
-       ORDER BY b.featured DESC, b.created_at DESC`
+       ORDER BY b.pin_order DESC, b.featured DESC, b.created_at DESC`
     );
     // Add public image URLs
     rows.forEach(r => {

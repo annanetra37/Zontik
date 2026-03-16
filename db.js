@@ -160,6 +160,14 @@ async function migrate() {
   await p.query(`ALTER TABLE businesses ALTER COLUMN logo TYPE TEXT;`);
   await p.query(`ALTER TABLE businesses ALTER COLUMN product_photo TYPE TEXT;`);
 
+  // Add pin_order column for pinning certain brands to top
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS pin_order INTEGER DEFAULT 0;
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
   // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
     "thespiceroute.at", "pixelsmith.de", "atelierloom.at",
