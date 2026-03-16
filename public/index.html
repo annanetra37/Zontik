@@ -1681,7 +1681,9 @@ nav ul a:hover { color: var(--accent); }
   function renderPagination(total, totalPages) {
     const container = document.getElementById('pagination');
     if (totalPages <= 1) { container.innerHTML = ''; return; }
-    let html = '<button onclick="goToPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>&lsaquo;</button>';
+    let html = '';
+    html += '<button onclick="goToPage(1)"' + (currentPage <= 1 ? ' disabled' : '') + ' title="First page">&laquo;</button>';
+    html += '<button onclick="goToPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + ' title="Previous page">&lsaquo;</button>';
     const maxButtons = 7;
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
     let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -1691,7 +1693,8 @@ nav ul a:hover { color: var(--accent); }
       html += '<button onclick="goToPage(' + i + ')"' + (i === currentPage ? ' class="active"' : '') + '>' + i + '</button>';
     }
     if (endPage < totalPages) { if (endPage < totalPages - 1) html += '<span class="pagination-info">…</span>'; html += '<button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>'; }
-    html += '<button onclick="goToPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>&rsaquo;</button>';
+    html += '<button onclick="goToPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + ' title="Next page">&rsaquo;</button>';
+    html += '<button onclick="goToPage(' + totalPages + ')"' + (currentPage >= totalPages ? ' disabled' : '') + ' title="Last page">&raquo;</button>';
     container.innerHTML = html;
   }
 
@@ -2110,6 +2113,7 @@ nav ul a:hover { color: var(--accent); }
     editingBusinessId = null;
     document.querySelector('#listModal .modal-title').textContent = 'List Your Business';
     document.getElementById('btnSubmit').textContent = 'Submit Listing';
+    document.getElementById('btnSubmit').disabled = false;
     document.getElementById('btnSubmit').setAttribute('onclick', 'submitBusiness()');
     ['f_name','f_tagline','f_desc','f_owner','f_year','f_tags','f_website','f_email','f_phone','f_instagram','f_facebook','f_linkedin','f_tiktok','f_logo','f_product_photo'].forEach(id => { document.getElementById(id).value = ''; });
     selectedCat = ''; selectedEmoji = '🏪'; selectedPrice = '€';
