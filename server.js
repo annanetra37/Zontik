@@ -9,22 +9,10 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "zontik-secret-change-in-prod";
 
 const multer = require("multer");
-const crypto = require("crypto");
-
-const UPLOADS_DIR = path.join(__dirname, "public", "uploads");
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: UPLOADS_DIR,
-  filename: (_req, file, cb) => {
-    const ext = file.mimetype.split("/")[1] === "jpeg" ? "jpg" : file.mimetype.split("/")[1];
-    cb(null, crypto.randomUUID() + "." + ext);
-  },
-});
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024, fieldSize: 10 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Only JPEG, PNG, GIF, and WebP images are allowed"));
@@ -47,9 +35,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Run migration on startup, then restore images from DB to disk
+// Run migration on startup
 migrate()
-  .then(() => { console.log("Database ready"); return restoreImagesFromDb(); })
+  .then(() => console.log("Database ready"))
   .catch((err) => console.error("Migration failed:", err.message));
 
 // Blocked domains for website field — social media is not a business website
@@ -87,6 +75,35 @@ function normalizeUrl(url) {
 
 const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "experiences"];
 
+// Helper: convert uploaded file buffer to base64 data URL for DB storage
+function fileToBase64(file) {
+  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+}
+
+// ── API: Serve images from DB as public URLs ──
+app.get("/api/images/:id/:field", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).end();
+  const id = parseInt(req.params.id, 10);
+  const field = req.params.field;
+  if (isNaN(id) || !["logo", "product_photo"].includes(field)) return res.status(400).end();
+
+  try {
+    const { rows } = await pool.query(`SELECT ${field} FROM businesses WHERE id = $1`, [id]);
+    if (!rows.length || !rows[0][field]) return res.status(404).end();
+
+    const dataUrl = rows[0][field];
+    const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (!match) return res.status(404).end();
+
+    res.set("Content-Type", match[1]);
+    res.set("Cache-Control", "public, max-age=86400");
+    res.send(Buffer.from(match[2], "base64"));
+  } catch {
+    res.status(500).end();
+  }
+});
+
 // Health check
 app.get("/health", async (_req, res) => {
   const pool = getPool();
@@ -122,71 +139,6 @@ function authOptional(req, _res, next) {
     try { req.user = jwt.verify(header.slice(7), JWT_SECRET); } catch {}
   }
   next();
-}
-
-// Helper: return public URL path for an uploaded file
-function getUploadUrl(file) {
-  return "/uploads/" + file.filename;
-}
-
-// Helper: convert a file on disk to base64 data URL for DB storage
-function fileToBase64(filePath, mimetype) {
-  const buf = fs.readFileSync(filePath);
-  return `data:${mimetype};base64,${buf.toString("base64")}`;
-}
-
-// Restore images from DB base64 to disk on startup (survives Railway redeploys)
-async function restoreImagesFromDb() {
-  const pool = getPool();
-  if (!pool) return;
-  try {
-    const { rows } = await pool.query(
-      "SELECT id, logo, product_photo FROM businesses WHERE logo IS NOT NULL OR product_photo IS NOT NULL"
-    );
-    let restored = 0;
-    for (const row of rows) {
-      let logoUrl = row.logo;
-      let photoUrl = row.product_photo;
-      let changed = false;
-
-      // If logo is a base64 data URL, write it to disk and update the path
-      if (row.logo && row.logo.startsWith("data:")) {
-        logoUrl = writeBase64ToDisk(row.logo);
-        changed = true;
-      } else if (row.logo && row.logo.startsWith("/uploads/")) {
-        // Check if the file exists on disk; if not, it's a broken path
-        const diskPath = path.join(__dirname, "public", row.logo);
-        if (!fs.existsSync(diskPath)) { logoUrl = null; changed = true; }
-      }
-
-      if (row.product_photo && row.product_photo.startsWith("data:")) {
-        photoUrl = writeBase64ToDisk(row.product_photo);
-        changed = true;
-      } else if (row.product_photo && row.product_photo.startsWith("/uploads/")) {
-        const diskPath = path.join(__dirname, "public", row.product_photo);
-        if (!fs.existsSync(diskPath)) { photoUrl = null; changed = true; }
-      }
-
-      if (changed) {
-        await pool.query("UPDATE businesses SET logo = $1, product_photo = $2 WHERE id = $3", [logoUrl, photoUrl, row.id]);
-        restored++;
-      }
-    }
-    if (restored > 0) console.log(`Restored images for ${restored} business(es) from DB`);
-  } catch (err) {
-    console.error("Image restore error:", err.message);
-  }
-}
-
-function writeBase64ToDisk(dataUrl) {
-  const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
-  if (!match) return null;
-  const mimetype = match[1];
-  const ext = mimetype.split("/")[1] === "jpeg" ? "jpg" : mimetype.split("/")[1];
-  const filename = crypto.randomUUID() + "." + ext;
-  const filePath = path.join(UPLOADS_DIR, filename);
-  fs.writeFileSync(filePath, Buffer.from(match[2], "base64"));
-  return "/uploads/" + filename;
 }
 
 // ── Auth: Register ──
@@ -259,7 +211,9 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
-              b.price_range, b.tags, b.emoji, b.logo, b.product_photo,
+              b.price_range, b.tags, b.emoji,
+              (b.logo IS NOT NULL) AS has_logo,
+              (b.product_photo IS NOT NULL) AS has_product_photo,
               COALESCE(r.avg_rating, 0) AS avg_rating,
               COALESCE(r.review_count, 0) AS review_count
        FROM businesses b
@@ -273,6 +227,12 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
        ORDER BY b.created_at DESC`,
       [req.user.id]
     );
+    // Add public image URLs
+    rows.forEach(r => {
+      r.logo = r.has_logo ? `/api/images/${r.id}/logo` : null;
+      r.product_photo = r.has_product_photo ? `/api/images/${r.id}/product_photo` : null;
+      delete r.has_logo; delete r.has_product_photo;
+    });
     res.json(rows);
   } catch (err) {
     console.error("GET my-businesses error:", err.message);
@@ -291,7 +251,9 @@ app.get("/api/businesses", async (_req, res) => {
       `SELECT b.id, b.name, b.category, b.description, b.website, b.city, b.country,
               b.price_range, b.tags, b.emoji, b.featured, b.year_founded,
               b.owner_name, b.short_tagline, b.instagram, b.facebook, b.linkedin, b.tiktok,
-              b.logo, b.product_photo, b.user_id,
+              (b.logo IS NOT NULL) AS has_logo,
+              (b.product_photo IS NOT NULL) AS has_product_photo,
+              b.user_id,
               COALESCE(r.avg_rating, 0) AS avg_rating,
               COALESCE(r.review_count, 0) AS review_count
        FROM businesses b
@@ -305,6 +267,12 @@ app.get("/api/businesses", async (_req, res) => {
        WHERE b.approved = TRUE
        ORDER BY b.featured DESC, b.created_at DESC`
     );
+    // Add public image URLs
+    rows.forEach(r => {
+      r.logo = r.has_logo ? `/api/images/${r.id}/logo` : null;
+      r.product_photo = r.has_product_photo ? `/api/images/${r.id}/product_photo` : null;
+      delete r.has_logo; delete r.has_product_photo;
+    });
     res.json(rows);
   } catch (err) {
     console.error("GET /api/businesses error:", err.message);
@@ -375,11 +343,11 @@ app.post("/api/businesses", authRequired, upload.fields([
     websiteDomain = website.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
   }
 
-  // Handle image uploads
-  let logoPath = null;
-  let productPhotoPath = null;
-  if (req.files?.logo?.[0]) logoPath = getUploadUrl(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = getUploadUrl(req.files.product_photo[0]);
+  // Handle image uploads — store as base64 data URLs in DB
+  let logoData = null;
+  let productPhotoData = null;
+  if (req.files?.logo?.[0]) logoData = fileToBase64(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoData = fileToBase64(req.files.product_photo[0]);
 
   console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
@@ -402,7 +370,7 @@ app.post("/api/businesses", authRequired, upload.fields([
         owner_name?.trim() || null, short_tagline?.trim() || null,
         instagram?.trim() || null, facebook?.trim() || null,
         linkedin?.trim() || null, tiktok?.trim() || null,
-        req.user.id, logoPath, productPhotoPath,
+        req.user.id, logoData, productPhotoData,
       ]
     );
     console.log(`Business "${name}" saved and live (owner: user #${req.user.id})`);
@@ -428,7 +396,7 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
 
   // Check ownership
-  const { rows: biz } = await pool.query("SELECT user_id FROM businesses WHERE id = $1", [id]);
+  const { rows: biz } = await pool.query("SELECT user_id, logo, product_photo FROM businesses WHERE id = $1", [id]);
   if (!biz.length) return res.status(404).json({ error: "Business not found" });
   if (biz[0].user_id !== req.user.id) return res.status(403).json({ error: "You can only edit your own businesses" });
 
@@ -470,11 +438,11 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
     websiteDomain = website.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
   }
 
-  // Handle image uploads (keep existing if not re-uploaded)
-  let logoPath = req.body.existing_logo || null;
-  let productPhotoPath = req.body.existing_product_photo || null;
-  if (req.files?.logo?.[0]) logoPath = getUploadUrl(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = getUploadUrl(req.files.product_photo[0]);
+  // Handle image uploads — new upload replaces, otherwise keep existing DB data
+  let logoData = req.body.keep_logo === "true" ? biz[0].logo : null;
+  let productPhotoData = req.body.keep_product_photo === "true" ? biz[0].product_photo : null;
+  if (req.files?.logo?.[0]) logoData = fileToBase64(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoData = fileToBase64(req.files.product_photo[0]);
 
   try {
     await pool.query(
@@ -494,7 +462,7 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
         owner_name?.trim() || null, short_tagline?.trim() || null,
         instagram?.trim() || null, facebook?.trim() || null,
         linkedin?.trim() || null, tiktok?.trim() || null,
-        logoPath, productPhotoPath, id,
+        logoData, productPhotoData, id,
       ]
     );
     console.log(`Business #${id} updated by user #${req.user.id}`);
@@ -513,9 +481,22 @@ app.get("/api/businesses/:id", async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
   try {
-    const { rows } = await pool.query("SELECT * FROM businesses WHERE id = $1", [id]);
+    const { rows } = await pool.query(
+      `SELECT id, name, category, description, website, city, country,
+              contact_email, contact_phone, price_range, tags, emoji,
+              year_founded, owner_name, short_tagline,
+              instagram, facebook, linkedin, tiktok, user_id,
+              (logo IS NOT NULL) AS has_logo,
+              (product_photo IS NOT NULL) AS has_product_photo
+       FROM businesses WHERE id = $1`,
+      [id]
+    );
     if (!rows.length) return res.status(404).json({ error: "Business not found" });
-    res.json(rows[0]);
+    const b = rows[0];
+    b.logo = b.has_logo ? `/api/images/${b.id}/logo` : null;
+    b.product_photo = b.has_product_photo ? `/api/images/${b.id}/product_photo` : null;
+    delete b.has_logo; delete b.has_product_photo;
+    res.json(b);
   } catch (err) {
     console.error("GET /api/businesses/:id error:", err.message);
     res.status(500).json({ error: "Failed to fetch business" });
@@ -563,9 +544,9 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
     return res.status(400).json({ error: "Rating must be between 1 and 5" });
   }
 
-  // Save uploaded photo
-  let photoPath = null;
-  if (req.file) photoPath = getUploadUrl(req.file);
+  // Save uploaded photo as base64 in DB
+  let photoData = null;
+  if (req.file) photoData = fileToBase64(req.file);
 
   try {
     const { rows } = await pool.query(
@@ -579,7 +560,7 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
     await pool.query(
       `INSERT INTO reviews (business_id, reviewer_name, rating, comment, photo)
        VALUES ($1, $2, $3, $4, $5)`,
-      [businessId, reviewer_name.trim(), r, comment?.trim() || null, photoPath]
+      [businessId, reviewer_name.trim(), r, comment?.trim() || null, photoData]
     );
 
     const stats = await pool.query(
@@ -588,7 +569,7 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
       [businessId]
     );
 
-    console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"${photoPath ? " (with photo)" : ""}`);
+    console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"${photoData ? " (with photo)" : ""}`);
 
     res.status(201).json({
       message: "Review submitted!",
