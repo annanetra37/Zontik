@@ -2177,6 +2177,7 @@ nav ul a:hover { color: var(--accent); }
       '<div class="detail-actions">' +
         '<a class="detail-visit" href="' + esc(b.website) + '" target="_blank" rel="noopener">Visit Website →</a>' +
         '<button class="detail-review-btn" onclick="closeDetailModal();openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Write Review</button>' +
+        ((authUser && b.user_id === authUser.id) ? '<button class="detail-review-btn" onclick="closeDetailModal();openEditModal(' + b.id + ')">Edit Listing</button>' : '') +
       '</div>';
 
     document.getElementById('detailModal').classList.add('open');
