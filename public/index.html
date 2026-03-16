@@ -1226,24 +1226,24 @@ nav ul a:hover { color: var(--accent); }
         </div>
         <div class="form-group" style="margin-bottom:0.75rem"><label>Icon for your card</label>
           <div class="emoji-options" id="emojiPicker">
-            <button type="button" class="emoji-opt selected" data-emoji="🏪" onclick="selectEmoji(this)">🏪</button>
-            <button type="button" class="emoji-opt" data-emoji="🫙" onclick="selectEmoji(this)">🫙</button>
-            <button type="button" class="emoji-opt" data-emoji="🛒" onclick="selectEmoji(this)">🛒</button>
-            <button type="button" class="emoji-opt" data-emoji="🫖" onclick="selectEmoji(this)">🫖</button>
-            <button type="button" class="emoji-opt" data-emoji="🖥️" onclick="selectEmoji(this)">🖥️</button>
-            <button type="button" class="emoji-opt" data-emoji="🗂️" onclick="selectEmoji(this)">🗂️</button>
-            <button type="button" class="emoji-opt" data-emoji="🪡" onclick="selectEmoji(this)">🪡</button>
-            <button type="button" class="emoji-opt" data-emoji="🪑" onclick="selectEmoji(this)">🪑</button>
-            <button type="button" class="emoji-opt" data-emoji="🧴" onclick="selectEmoji(this)">🧴</button>
-            <button type="button" class="emoji-opt" data-emoji="🫧" onclick="selectEmoji(this)">🫧</button>
-            <button type="button" class="emoji-opt" data-emoji="🧣" onclick="selectEmoji(this)">🧣</button>
-            <button type="button" class="emoji-opt" data-emoji="🎨" onclick="selectEmoji(this)">🎨</button>
-            <button type="button" class="emoji-opt" data-emoji="📸" onclick="selectEmoji(this)">📸</button>
+            <button type="button" class="emoji-opt selected" data-emoji="🍽️" onclick="selectEmoji(this)">🍽️</button>
             <button type="button" class="emoji-opt" data-emoji="🍳" onclick="selectEmoji(this)">🍳</button>
-            <button type="button" class="emoji-opt" data-emoji="💇" onclick="selectEmoji(this)">💇</button>
+            <button type="button" class="emoji-opt" data-emoji="☕" onclick="selectEmoji(this)">☕</button>
+            <button type="button" class="emoji-opt" data-emoji="💻" onclick="selectEmoji(this)">💻</button>
+            <button type="button" class="emoji-opt" data-emoji="🖥️" onclick="selectEmoji(this)">🖥️</button>
+            <button type="button" class="emoji-opt" data-emoji="📱" onclick="selectEmoji(this)">📱</button>
             <button type="button" class="emoji-opt" data-emoji="🔧" onclick="selectEmoji(this)">🔧</button>
+            <button type="button" class="emoji-opt" data-emoji="🎨" onclick="selectEmoji(this)">🎨</button>
+            <button type="button" class="emoji-opt" data-emoji="🪡" onclick="selectEmoji(this)">🪡</button>
+            <button type="button" class="emoji-opt" data-emoji="❤️" onclick="selectEmoji(this)">❤️</button>
+            <button type="button" class="emoji-opt" data-emoji="💆" onclick="selectEmoji(this)">💆</button>
+            <button type="button" class="emoji-opt" data-emoji="🧴" onclick="selectEmoji(this)">🧴</button>
+            <button type="button" class="emoji-opt" data-emoji="👜" onclick="selectEmoji(this)">👜</button>
+            <button type="button" class="emoji-opt" data-emoji="💎" onclick="selectEmoji(this)">💎</button>
+            <button type="button" class="emoji-opt" data-emoji="👗" onclick="selectEmoji(this)">👗</button>
+            <button type="button" class="emoji-opt" data-emoji="📖" onclick="selectEmoji(this)">📖</button>
             <button type="button" class="emoji-opt" data-emoji="🎓" onclick="selectEmoji(this)">🎓</button>
-            <button type="button" class="emoji-opt" data-emoji="📚" onclick="selectEmoji(this)">📚</button>
+            <button type="button" class="emoji-opt" data-emoji="🌍" onclick="selectEmoji(this)">🌍</button>
             <button type="button" class="emoji-opt" data-emoji="✈️" onclick="selectEmoji(this)">✈️</button>
             <button type="button" class="emoji-opt" data-emoji="⭐" onclick="selectEmoji(this)">⭐</button>
           </div>
@@ -1722,7 +1722,7 @@ nav ul a:hover { color: var(--accent); }
     if (countriesData) {
       const sel = document.getElementById('f_country');
       if (sel.options.length <= 1) {
-        countriesData.forEach(c => { const o = document.createElement('option'); o.value = c.code; o.textContent = c.name; sel.appendChild(o); });
+        countriesData.forEach(c => { const o = document.createElement('option'); o.value = c.country; o.textContent = c.country; sel.appendChild(o); });
       }
       return;
     }
@@ -1730,7 +1730,7 @@ nav ul a:hover { color: var(--accent); }
       const res = await fetch('/countries.json');
       countriesData = await res.json();
       const sel = document.getElementById('f_country');
-      countriesData.forEach(c => { const o = document.createElement('option'); o.value = c.code; o.textContent = c.name; sel.appendChild(o); });
+      countriesData.forEach(c => { const o = document.createElement('option'); o.value = c.country; o.textContent = c.country; sel.appendChild(o); });
     } catch {}
   }
   function populateCities() {
@@ -1740,7 +1740,7 @@ nav ul a:hover { color: var(--accent); }
     const customInput = document.getElementById('f_city_custom');
     if (customInput) customInput.remove();
     if (!code || !countriesData) return;
-    const country = countriesData.find(c => c.code === code);
+    const country = countriesData.find(c => c.country === code);
     if (country && country.cities) {
       country.cities.forEach(city => { const o = document.createElement('option'); o.value = city; o.textContent = city; citySel.appendChild(o); });
     }
