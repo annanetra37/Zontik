@@ -83,12 +83,13 @@ function fileToBase64(file) {
 // Helper: resolve image field to a public URL for the frontend.
 // For listings we use a prefix (LEFT(col, 8)) to avoid loading full base64 blobs.
 // For single business detail we have the full value.
-function resolveImageUrl(id, field, valueOrPrefix) {
+function resolveImageUrl(id, field, valueOrPrefix, bustCache) {
   if (!valueOrPrefix) return null;
   // External URL — return directly
   if (/^https?:\/\//i.test(valueOrPrefix)) return valueOrPrefix;
   // base64 data URL — serve through our image endpoint
-  return `/api/images/${id}/${field}`;
+  const url = `/api/images/${id}/${field}`;
+  return bustCache ? `${url}?v=${Date.now()}` : url;
 }
 
 // ── API: Serve images from DB as public URLs ──
@@ -116,7 +117,7 @@ app.get("/api/images/:id/:field", async (req, res) => {
     if (!match) return res.status(404).end();
 
     res.set("Content-Type", match[1]);
-    res.set("Cache-Control", "public, max-age=86400");
+    res.set("Cache-Control", "public, max-age=300");
     res.send(Buffer.from(match[2], "base64"));
   } catch {
     res.status(500).end();
@@ -263,8 +264,8 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
       [req.user.id]
     );
     rows.forEach(r => {
-      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix);
-      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix);
+      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix, true);
+      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix, true);
       delete r.logo_prefix; delete r.photo_prefix;
     });
     res.json(rows);
@@ -302,8 +303,8 @@ app.get("/api/businesses", async (_req, res) => {
        ORDER BY b.featured DESC, b.pin_order DESC, COALESCE(r.review_count, 0) DESC, b.created_at DESC`
     );
     rows.forEach(r => {
-      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix);
-      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix);
+      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix, true);
+      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix, true);
       delete r.logo_prefix; delete r.photo_prefix;
     });
     res.json(rows);
@@ -526,8 +527,8 @@ app.get("/api/businesses/:id", async (req, res) => {
     );
     if (!rows.length) return res.status(404).json({ error: "Business not found" });
     const b = rows[0];
-    b.logo = resolveImageUrl(b.id, 'logo', b.logo_prefix);
-    b.product_photo = resolveImageUrl(b.id, 'product_photo', b.photo_prefix);
+    b.logo = resolveImageUrl(b.id, 'logo', b.logo_prefix, true);
+    b.product_photo = resolveImageUrl(b.id, 'product_photo', b.photo_prefix, true);
     delete b.logo_prefix; delete b.photo_prefix;
     res.json(b);
   } catch (err) {
