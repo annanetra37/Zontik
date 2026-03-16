@@ -9,10 +9,22 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "zontik-secret-change-in-prod";
 
 const multer = require("multer");
+const crypto = require("crypto");
+
+const UPLOADS_DIR = path.join(__dirname, "public", "uploads");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: UPLOADS_DIR,
+  filename: (_req, file, cb) => {
+    const ext = file.mimetype.split("/")[1] === "jpeg" ? "jpg" : file.mimetype.split("/")[1];
+    cb(null, crypto.randomUUID() + "." + ext);
+  },
+});
 
 const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, fieldSize: 10 * 1024 * 1024 }, // 5MB files, 10MB fields (for base64 data URLs)
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, fieldSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Only JPEG, PNG, GIF, and WebP images are allowed"));
@@ -35,9 +47,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Run migration on startup
+// Run migration on startup, then restore images from DB to disk
 migrate()
-  .then(() => console.log("Database ready"))
+  .then(() => { console.log("Database ready"); return restoreImagesFromDb(); })
   .catch((err) => console.error("Migration failed:", err.message));
 
 // Blocked domains for website field — social media is not a business website
@@ -112,10 +124,69 @@ function authOptional(req, _res, next) {
   next();
 }
 
-// Helper: convert uploaded file buffer to base64 data URL
-function fileToDataUrl(file) {
-  const base64 = file.buffer.toString("base64");
-  return `data:${file.mimetype};base64,${base64}`;
+// Helper: return public URL path for an uploaded file
+function getUploadUrl(file) {
+  return "/uploads/" + file.filename;
+}
+
+// Helper: convert a file on disk to base64 data URL for DB storage
+function fileToBase64(filePath, mimetype) {
+  const buf = fs.readFileSync(filePath);
+  return `data:${mimetype};base64,${buf.toString("base64")}`;
+}
+
+// Restore images from DB base64 to disk on startup (survives Railway redeploys)
+async function restoreImagesFromDb() {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, logo, product_photo FROM businesses WHERE logo IS NOT NULL OR product_photo IS NOT NULL"
+    );
+    let restored = 0;
+    for (const row of rows) {
+      let logoUrl = row.logo;
+      let photoUrl = row.product_photo;
+      let changed = false;
+
+      // If logo is a base64 data URL, write it to disk and update the path
+      if (row.logo && row.logo.startsWith("data:")) {
+        logoUrl = writeBase64ToDisk(row.logo);
+        changed = true;
+      } else if (row.logo && row.logo.startsWith("/uploads/")) {
+        // Check if the file exists on disk; if not, it's a broken path
+        const diskPath = path.join(__dirname, "public", row.logo);
+        if (!fs.existsSync(diskPath)) { logoUrl = null; changed = true; }
+      }
+
+      if (row.product_photo && row.product_photo.startsWith("data:")) {
+        photoUrl = writeBase64ToDisk(row.product_photo);
+        changed = true;
+      } else if (row.product_photo && row.product_photo.startsWith("/uploads/")) {
+        const diskPath = path.join(__dirname, "public", row.product_photo);
+        if (!fs.existsSync(diskPath)) { photoUrl = null; changed = true; }
+      }
+
+      if (changed) {
+        await pool.query("UPDATE businesses SET logo = $1, product_photo = $2 WHERE id = $3", [logoUrl, photoUrl, row.id]);
+        restored++;
+      }
+    }
+    if (restored > 0) console.log(`Restored images for ${restored} business(es) from DB`);
+  } catch (err) {
+    console.error("Image restore error:", err.message);
+  }
+}
+
+function writeBase64ToDisk(dataUrl) {
+  const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) return null;
+  const mimetype = match[1];
+  const ext = mimetype.split("/")[1] === "jpeg" ? "jpg" : mimetype.split("/")[1];
+  const filename = crypto.randomUUID() + "." + ext;
+  const filePath = path.join(UPLOADS_DIR, filename);
+  fs.writeFileSync(filePath, Buffer.from(match[2], "base64"));
+  return "/uploads/" + filename;
 }
 
 // ── Auth: Register ──
@@ -307,8 +378,8 @@ app.post("/api/businesses", authRequired, upload.fields([
   // Handle image uploads
   let logoPath = null;
   let productPhotoPath = null;
-  if (req.files?.logo?.[0]) logoPath = fileToDataUrl(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = fileToDataUrl(req.files.product_photo[0]);
+  if (req.files?.logo?.[0]) logoPath = getUploadUrl(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoPath = getUploadUrl(req.files.product_photo[0]);
 
   console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
@@ -402,8 +473,8 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   // Handle image uploads (keep existing if not re-uploaded)
   let logoPath = req.body.existing_logo || null;
   let productPhotoPath = req.body.existing_product_photo || null;
-  if (req.files?.logo?.[0]) logoPath = fileToDataUrl(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoPath = fileToDataUrl(req.files.product_photo[0]);
+  if (req.files?.logo?.[0]) logoPath = getUploadUrl(req.files.logo[0]);
+  if (req.files?.product_photo?.[0]) productPhotoPath = getUploadUrl(req.files.product_photo[0]);
 
   try {
     await pool.query(
@@ -494,7 +565,7 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
 
   // Save uploaded photo
   let photoPath = null;
-  if (req.file) photoPath = fileToDataUrl(req.file);
+  if (req.file) photoPath = getUploadUrl(req.file);
 
   try {
     const { rows } = await pool.query(
