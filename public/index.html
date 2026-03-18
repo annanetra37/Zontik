@@ -921,6 +921,14 @@ nav ul a:hover { color: var(--accent); }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
 }
+.password-wrap { position: relative; display: flex; }
+.password-wrap input { flex: 1; padding-right: 2.8rem; }
+.pw-toggle {
+  position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 1.1rem;
+  padding: 0.2rem; opacity: 0.5; line-height: 1;
+}
+.pw-toggle:hover { opacity: 0.8; }
 .form-group textarea { resize: vertical; min-height: 80px; }
 .form-group .form-hint { font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.1rem; }
 .form-hint { font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.1rem; }
@@ -1367,7 +1375,7 @@ nav ul a:hover { color: var(--accent); }
         <div class="form-group" style="margin-bottom:0.75rem"><label>Your Name <span class="req">*</span></label><input type="text" id="a_name" placeholder="e.g. Anna Mueller" maxlength="200" /></div>
       </div>
       <div class="form-group" style="margin-bottom:0.75rem"><label>Email <span class="req">*</span></label><input type="email" id="a_email" placeholder="you@example.com" maxlength="254" /></div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Password <span class="req">*</span></label><input type="password" id="a_password" placeholder="Min. 6 characters" /></div>
+      <div class="form-group" style="margin-bottom:0.75rem"><label>Password <span class="req">*</span></label><div class="password-wrap"><input type="password" id="a_password" placeholder="Min. 6 characters" /><button type="button" class="pw-toggle" onclick="togglePassword()" id="pwToggleBtn" title="Show password">👁</button></div></div>
       <button class="btn-submit" id="btnAuth" onclick="submitAuth()" style="width:100%">Log in</button>
       <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--ink-soft)">
         <span id="authSwitchText">Don't have an account?</span>
@@ -1426,11 +1434,18 @@ nav ul a:hover { color: var(--accent); }
   }
   function logout() { setAuth(null, null); loadBusinesses(); }
 
+  const authBodyOriginal = document.getElementById('authModalBody').innerHTML;
   function openAuthModal(mode) {
     authMode = mode;
+    // Restore original form if it was replaced by verification message
+    if (!document.getElementById('a_email')) {
+      document.getElementById('authModalBody').innerHTML = authBodyOriginal;
+    }
     document.getElementById('authError').style.display = 'none';
     document.getElementById('a_email').value = '';
     document.getElementById('a_password').value = '';
+    document.getElementById('a_password').type = 'password';
+    document.getElementById('pwToggleBtn').textContent = '👁';
     document.getElementById('a_name').value = '';
     if (mode === 'register') {
       document.getElementById('authModalTitle').textContent = 'Create Account';
@@ -1448,6 +1463,12 @@ nav ul a:hover { color: var(--accent); }
     document.getElementById('authModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
+  function togglePassword() {
+    const inp = document.getElementById('a_password');
+    const btn = document.getElementById('pwToggleBtn');
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; btn.title = 'Hide password'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; btn.title = 'Show password'; }
+  }
   function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('authModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAuthModal(); });
   function switchAuthMode() { openAuthModal(authMode === 'login' ? 'register' : 'login'); }
@@ -1459,7 +1480,10 @@ nav ul a:hover { color: var(--accent); }
     const password = document.getElementById('a_password').value;
     const name = document.getElementById('a_name').value.trim();
     if (!email || !password) { errBanner.textContent = 'Email and password are required'; errBanner.style.display = 'block'; return; }
-    if (authMode === 'register' && !name) { errBanner.textContent = 'Please enter your name'; errBanner.style.display = 'block'; return; }
+    if (authMode === 'register') {
+      if (!name) { errBanner.textContent = 'Please enter your name'; errBanner.style.display = 'block'; return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { errBanner.textContent = 'Please enter a valid email address'; errBanner.style.display = 'block'; return; }
+    }
     const btn = document.getElementById('btnAuth');
     btn.disabled = true; btn.textContent = authMode === 'login' ? 'Logging in...' : 'Creating account...';
     try {
@@ -1467,10 +1491,35 @@ nav ul a:hover { color: var(--accent); }
       const body = authMode === 'login' ? { email, password } : { email, password, name };
       const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { errBanner.textContent = data.error || 'Something went wrong'; errBanner.style.display = 'block'; }
-      else { setAuth(data.token, data.user); closeAuthModal(); loadBusinesses(); }
+      if (!res.ok) {
+        if (data.unverified) {
+          errBanner.innerHTML = esc(data.error) + ' <a href="#" onclick="resendVerification(\'' + esc(data.email) + '\');return false" style="color:var(--accent);font-weight:600">Resend email</a>';
+        } else {
+          errBanner.textContent = data.error || 'Something went wrong';
+        }
+        errBanner.style.display = 'block';
+      } else if (data.token) {
+        setAuth(data.token, data.user); closeAuthModal(); loadBusinesses();
+      } else {
+        // Registration success — show verification message
+        document.getElementById('authModalBody').innerHTML =
+          '<div style="text-align:center;padding:1.5rem 0">' +
+          '<div style="font-size:2.5rem;margin-bottom:1rem">📧</div>' +
+          '<h3 style="margin:0 0 0.75rem">Check your email!</h3>' +
+          '<p style="color:var(--ink-soft);margin:0 0 1rem">We sent a verification link to <strong>' + esc(email) + '</strong>. Click the link to activate your account.</p>' +
+          '<p style="color:var(--ink-soft);font-size:0.85rem">Didn\'t receive it? <a href="#" onclick="resendVerification(\'' + esc(email) + '\');return false" style="color:var(--accent);font-weight:600">Resend</a></p>' +
+          '</div>';
+      }
     } catch { errBanner.textContent = 'Network error — please try again'; errBanner.style.display = 'block'; }
     btn.disabled = false; btn.textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  async function resendVerification(email) {
+    try {
+      const res = await fetch('/api/auth/resend-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const data = await res.json();
+      alert(data.message || 'Verification email sent!');
+    } catch { alert('Network error — please try again'); }
   }
 
   function previewImage(input, areaId) {
@@ -2330,6 +2379,17 @@ nav ul a:hover { color: var(--accent); }
   updateAuthUI();
   initCountryDropdown();
   loadBusinesses();
+
+  // Show success message after email verification redirect
+  if (new URLSearchParams(window.location.search).get('verified') === '1') {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:0.75rem 1.5rem;border-radius:0.75rem;font-weight:600;font-size:0.9rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.15)';
+    toast.textContent = 'Email verified! You can now log in.';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+    history.replaceState(null, '', '/');
+    openAuthModal('login');
+  }
 </script>
 </body>
 </html>
