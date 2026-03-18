@@ -508,6 +508,26 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   }
 });
 
+// ── API: Delete a business (owner only) ──
+app.delete("/api/businesses/:id", authRequired, async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).json({ error: "Database not available" });
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
+  try {
+    const { rows } = await pool.query("SELECT user_id FROM businesses WHERE id = $1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Business not found" });
+    if (rows[0].user_id !== req.user.id) return res.status(403).json({ error: "You can only delete your own businesses" });
+    await pool.query("DELETE FROM reviews WHERE business_id = $1", [id]);
+    await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
+    console.log(`Business #${id} deleted by user #${req.user.id}`);
+    res.json({ message: "Business deleted successfully" });
+  } catch (err) {
+    console.error("DELETE /api/businesses error:", err.message);
+    res.status(500).json({ error: "Failed to delete business" });
+  }
+});
+
 // ── API: Get single business (for edit form) ──
 app.get("/api/businesses/:id", async (req, res) => {
   const pool = getPool();

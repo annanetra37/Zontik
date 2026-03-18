@@ -208,6 +208,12 @@ nav ul a:hover { color: var(--accent); }
   font-weight: 600; cursor: pointer; font-family: inherit;
 }
 .profile-biz-edit:hover { background: var(--accent); color: #fff; }
+.profile-biz-delete {
+  background: #fff0f0; color: #d9363e; border: none;
+  padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.78rem;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.profile-biz-delete:hover { background: #d9363e; color: #fff; }
 .profile-empty {
   text-align: center; padding: 2rem 1rem; color: var(--ink-soft);
   font-size: 0.9rem;
@@ -2134,6 +2140,19 @@ nav ul a:hover { color: var(--accent); }
     document.getElementById('formError').style.display = 'none';
   }
 
+  async function deleteBusiness(bizId) {
+    if (!authToken) return;
+    if (!confirm('Are you sure you want to delete this business? This action cannot be undone.')) return;
+    try {
+      const res = await fetch('/api/businesses/' + bizId, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Failed to delete');
+      closeDetailModal();
+      closeProfileModal();
+      loadBusinesses();
+    } catch { alert('Network error — please try again'); }
+  }
+
   // ── Detail Modal ──
   function openDetailModal(bizId) {
     const b = allBusinesses.find(x => x.id === bizId);
@@ -2190,7 +2209,7 @@ nav ul a:hover { color: var(--accent); }
       '<div class="detail-actions">' +
         '<a class="detail-visit" href="' + esc(b.website) + '" target="_blank" rel="noopener">Visit Website →</a>' +
         '<button class="detail-review-btn" onclick="closeDetailModal();openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Write Review</button>' +
-        ((authUser && b.user_id === authUser.id) ? '<button class="detail-review-btn" onclick="closeDetailModal();openEditModal(' + b.id + ')">Edit Listing</button>' : '') +
+        ((authUser && b.user_id === authUser.id) ? '<button class="detail-review-btn" onclick="closeDetailModal();openEditModal(' + b.id + ')">Edit Listing</button><button class="detail-review-btn" style="background:#fff0f0;color:#d9363e" onclick="deleteBusiness(' + b.id + ')">Delete</button>' : '') +
         ((authUser && authUser.is_admin) ? '<button class="detail-review-btn" id="adminFeaturedBtn" style="background:' + (b.featured ? 'var(--lemon);color:#705000;border:1.5px solid #f0d060' : 'var(--accent-soft);color:var(--accent)') + '" onclick="toggleFeatured(' + b.id + ',' + !b.featured + ')">' + (b.featured ? '★ Unfeature' : '☆ Feature') + '</button>' : '') +
       '</div>';
 
@@ -2265,7 +2284,7 @@ nav ul a:hover { color: var(--accent); }
           '<div class="profile-biz-info"><div class="profile-biz-name">' + esc(b.name) + '</div>' +
           '<div class="profile-biz-meta">' + esc(categoryNames[b.category] || b.category) + ' · ' + esc(b.city) + ', ' + esc(b.country) + '</div>' +
           '<div class="profile-biz-meta">' + ratingText + '</div></div>' +
-          '<div class="profile-biz-actions"><button class="profile-biz-edit" onclick="closeProfileModal();openEditModal(' + b.id + ')">Edit</button></div></div>';
+          '<div class="profile-biz-actions"><button class="profile-biz-edit" onclick="closeProfileModal();openEditModal(' + b.id + ')">Edit</button><button class="profile-biz-delete" onclick="deleteBusiness(' + b.id + ')">Delete</button></div></div>';
       }).join('');
     } catch { content.innerHTML = '<div class="profile-empty">Could not load your businesses</div>'; }
   }
