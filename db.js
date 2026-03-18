@@ -185,6 +185,22 @@ async function migrate() {
   `);
 
   // One-time cleanup: remove seed/example businesses
+
+  // Add email verification columns
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(200);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
+  // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
     "thespiceroute.at", "pixelsmith.de", "atelierloom.at",
     "verdurewellness.at", "foldandform.at", "claritybookkeeping.at",
