@@ -488,7 +488,7 @@ nav ul a:hover { color: var(--accent); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .card-banner {
-  height: 220px; position: relative;
+  height: 280px; position: relative;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
@@ -536,8 +536,7 @@ nav ul a:hover { color: var(--accent); }
   line-height: 1.25; letter-spacing: -0.01em;
 }
 .card-desc {
-  font-size: 0.84rem; color: var(--ink-mid);
-  line-height: 1.65; flex: 1; margin-bottom: 1rem;
+  display: none;
 }
 .card-tags { display: flex; flex-wrap: wrap; gap: 0.38rem; margin-bottom: 1rem; }
 .tag {
@@ -600,13 +599,13 @@ nav ul a:hover { color: var(--accent); }
 
 /* ── REVIEW ── */
 .card-rating {
-  display: flex; align-items: center; gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.8rem; padding: 0.4rem 0;
 }
-.card-stars { font-size: 0.82rem; letter-spacing: 1px; }
-.card-rating-text { font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; }
+.card-stars { font-size: 1rem; letter-spacing: 1.5px; }
+.card-rating-text { font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; }
 .card-review-btn {
-  font-family: inherit; font-size: 0.72rem; font-weight: 700;
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
   color: var(--accent); background: none; border: none;
   cursor: pointer; text-decoration: underline; margin-left: auto;
 }
