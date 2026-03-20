@@ -115,6 +115,12 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_reviews_business_id ON reviews(business_id);
   `);
 
+  // Index for the main listing query (approved businesses sorted by featured/pin)
+  await p.query(`
+    CREATE INDEX IF NOT EXISTS idx_businesses_listing
+    ON businesses(approved, featured DESC, pin_order DESC, created_at DESC);
+  `);
+
   // Add photo column to reviews if missing (TEXT for base64 data URLs)
   await p.query(`
     DO $$ BEGIN
