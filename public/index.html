@@ -903,7 +903,8 @@ nav ul a:hover { color: var(--accent); }
 /* ── MOBILE MENU BUTTON ── */
 .mobile-menu-btn {
   display: none; background: none; border: none; cursor: pointer;
-  flex-direction: column; gap: 5px; padding: 6px; margin-left: auto;
+  flex-direction: column; gap: 5px; padding: 8px; margin-left: auto;
+  order: 2;
 }
 .mobile-menu-btn span {
   display: block; width: 24px; height: 2.5px; background: var(--ink);
@@ -918,22 +919,44 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   .sidebar { position: static; }
   .cta-banner { flex-direction: column; padding: 2rem; text-align: center; }
   .mobile-menu-btn { display: flex; }
-  nav { flex-wrap: wrap; height: auto; min-height: 64px; padding: 0.8rem 5vw; }
+  nav {
+    flex-wrap: wrap; height: auto; min-height: 64px;
+    padding: 0.8rem 4vw; justify-content: space-between;
+  }
+  .logo { flex-shrink: 0; }
   .nav-search-box { order: 3; flex-basis: 100%; max-width: 100%; margin-top: 0.5rem; }
   nav ul {
-    display: none; flex-direction: column; gap: 0.5rem;
-    order: 4; flex-basis: 100%; padding: 1rem 0 0.5rem;
+    display: none; flex-direction: column; gap: 0;
+    order: 4; flex-basis: 100%; padding: 0.5rem 0;
+    border-top: 1.5px solid var(--border); margin-top: 0.5rem;
   }
   nav.mobile-open ul { display: flex; }
   nav ul li { width: 100%; }
-  nav ul li a { display: block; padding: 0.6rem 0; font-size: 1rem; }
-  .nav-dropdown-menu {
-    position: static; box-shadow: none; border: none;
-    background: var(--bg); border-radius: 0.8rem; margin-top: 0.4rem;
-    padding: 0.5rem; display: none;
+  nav ul li a {
+    display: block; padding: 0.75rem 0.5rem; font-size: 1rem;
+    border-bottom: 1px solid var(--border); color: var(--ink);
   }
+  nav ul li:last-child a { border-bottom: none; }
+  .nav-dropdown-menu {
+    position: static; box-shadow: none;
+    border: 1.5px solid var(--border);
+    background: var(--surface); border-radius: 0.8rem; margin: 0.3rem 0 0.3rem 0.5rem;
+    padding: 0.4rem; display: none;
+  }
+  .nav-dropdown-menu a {
+    padding: 0.6rem 0.8rem !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-size: 0.9rem !important; font-weight: 600;
+    color: var(--ink) !important; background: var(--surface);
+    border-radius: 0.5rem; margin-bottom: 2px;
+  }
+  .nav-dropdown-menu a:last-child { border-bottom: none !important; }
+  .nav-dropdown-menu a:hover { background: var(--accent-soft) !important; }
   .nav-dropdown.open .nav-dropdown-menu { display: block; }
-  .nav-cta { text-align: center; }
+  .nav-cta {
+    text-align: center; margin-top: 0.3rem;
+    border-bottom: none !important;
+  }
   .grid { grid-template-columns: 1fr; gap: 1rem; }
   .card-banner { height: 220px; }
 }
