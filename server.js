@@ -55,6 +55,16 @@ migrate()
   .then(() => console.log("Database ready"))
   .catch((err) => console.error("Migration failed:", err.message));
 
+// ── In-memory cache for businesses list ──
+let businessesCache = null;
+let businessesCacheTime = 0;
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function invalidateBusinessesCache() {
+  businessesCache = null;
+  businessesCacheTime = 0;
+}
+
 // Blocked domains for website field — social media is not a business website
 const SOCIAL_DOMAINS = [
   "instagram.com", "www.instagram.com",
@@ -373,8 +383,12 @@ app.get("/api/auth/my-businesses", authRequired, async (req, res) => {
 
 // countries.json is served statically from public/
 
-// ── API: Get all approved businesses ──
+// ── API: Get all approved businesses (cached) ──
 app.get("/api/businesses", async (_req, res) => {
+  // Serve from cache if still fresh
+  if (businessesCache && (Date.now() - businessesCacheTime) < CACHE_TTL_MS) {
+    return res.json(businessesCache);
+  }
   const pool = getPool();
   if (!pool) return res.json([]);
   try {
@@ -399,10 +413,13 @@ app.get("/api/businesses", async (_req, res) => {
        ORDER BY b.featured DESC, b.pin_order DESC, COALESCE(r.review_count, 0) DESC, b.created_at DESC`
     );
     rows.forEach(r => {
-      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix, true);
-      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix, true);
+      r.logo = resolveImageUrl(r.id, 'logo', r.logo_prefix, false);
+      r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix, false);
       delete r.logo_prefix; delete r.photo_prefix;
     });
+    // Update cache
+    businessesCache = rows;
+    businessesCacheTime = Date.now();
     res.json(rows);
   } catch (err) {
     console.error("GET /api/businesses error:", err.message);
@@ -504,6 +521,7 @@ app.post("/api/businesses", authRequired, upload.fields([
       ]
     );
     console.log(`Business "${name}" saved and live (owner: user #${req.user.id})`);
+    invalidateBusinessesCache();
     res.status(201).json({ message: "Business listed successfully! It's now live on Zoncik." });
   } catch (err) {
     if (err.code === "23505") {
@@ -596,6 +614,7 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
       ]
     );
     console.log(`Business #${id} updated by user #${req.user.id}`);
+    invalidateBusinessesCache();
     res.json({ message: "Business updated successfully!" });
   } catch (err) {
     if (err.code === "23505") return res.status(409).json({ error: "A business with this domain already exists." });
@@ -617,6 +636,7 @@ app.delete("/api/businesses/:id", authRequired, async (req, res) => {
     await pool.query("DELETE FROM reviews WHERE business_id = $1", [id]);
     await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
     console.log(`Business #${id} deleted by user #${req.user.id}`);
+    invalidateBusinessesCache();
     res.json({ message: "Business deleted successfully" });
   } catch (err) {
     console.error("DELETE /api/businesses error:", err.message);
@@ -664,6 +684,7 @@ app.put("/api/admin/businesses/:id/featured", adminRequired, async (req, res) =>
     const { rowCount } = await pool.query("UPDATE businesses SET featured = $1 WHERE id = $2", [featured, id]);
     if (!rowCount) return res.status(404).json({ error: "Business not found" });
     console.log(`Admin (user #${req.user.id}) set business #${id} featured=${featured}`);
+    invalidateBusinessesCache();
     res.json({ message: `Business ${featured ? "marked as featured" : "unfeatured"}`, featured });
   } catch (err) {
     console.error("Admin featured toggle error:", err.message);
@@ -682,6 +703,7 @@ app.put("/api/admin/businesses/:id/pin", adminRequired, async (req, res) => {
     const { rowCount } = await pool.query("UPDATE businesses SET pin_order = $1 WHERE id = $2", [pinOrder, id]);
     if (!rowCount) return res.status(404).json({ error: "Business not found" });
     console.log(`Admin (user #${req.user.id}) set business #${id} pin_order=${pinOrder}`);
+    invalidateBusinessesCache();
     res.json({ message: "Pin order updated", pin_order: pinOrder });
   } catch (err) {
     console.error("Admin pin error:", err.message);
@@ -777,6 +799,7 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
     );
 
     console.log(`Review submitted for business #${businessId}: ${r} stars by "${reviewer_name.trim()}"${photoData ? " (with photo)" : ""}`);
+    invalidateBusinessesCache();
 
     res.status(201).json({
       message: "Review submitted!",

@@ -115,7 +115,7 @@ nav ul { display: flex; gap: 2rem; list-style: none; align-items: center; margin
   flex-direction: column;
   gap: 0.1rem;
 }
-.nav-dropdown:hover .nav-dropdown-menu { display: flex; }
+.nav-dropdown:hover .nav-dropdown-menu, .nav-dropdown.open .nav-dropdown-menu { display: flex; }
 .nav-dropdown-menu::before {
   content: ''; position: absolute; top: -0.75rem; left: 0; right: 0; height: 0.75rem;
 }
@@ -464,6 +464,29 @@ nav ul a:hover { color: var(--accent); }
   background: var(--surface); border: 1.5px solid var(--border);
   padding: 0.3rem 0.9rem; border-radius: 999px;
 }
+/* ── SKELETON LOADING ── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 1.6rem; overflow: hidden;
+}
+.skeleton-banner {
+  height: 280px; background: linear-gradient(90deg, #f0ecff 25%, #e8e4f8 50%, #f0ecff 75%);
+  background-size: 800px 100%; animation: shimmer 1.5s infinite;
+}
+.skeleton-body { padding: 1.4rem; }
+.skeleton-line {
+  height: 14px; border-radius: 8px; margin-bottom: 0.7rem;
+  background: linear-gradient(90deg, #f0ecff 25%, #e8e4f8 50%, #f0ecff 75%);
+  background-size: 800px 100%; animation: shimmer 1.5s infinite;
+}
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w80 { width: 80%; }
+.skeleton-line.w40 { width: 40%; }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -877,11 +900,50 @@ nav ul a:hover { color: var(--accent); }
   font-size: 0.78rem; color: var(--ink-soft); font-weight: 600;
   margin: 0 0.5rem;
 }
+/* ── MOBILE MENU BUTTON ── */
+.mobile-menu-btn {
+  display: none; background: none; border: none; cursor: pointer;
+  flex-direction: column; gap: 5px; padding: 6px; margin-left: auto;
+}
+.mobile-menu-btn span {
+  display: block; width: 24px; height: 2.5px; background: var(--ink);
+  border-radius: 2px; transition: transform 0.25s, opacity 0.25s;
+}
+nav.mobile-open .mobile-menu-btn span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+nav.mobile-open .mobile-menu-btn span:nth-child(2) { opacity: 0; }
+nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
 @media (max-width: 860px) {
   .page-body { grid-template-columns: 1fr; }
   .sidebar { position: static; }
   .cta-banner { flex-direction: column; padding: 2rem; text-align: center; }
-  nav ul { display: none; }
+  .mobile-menu-btn { display: flex; }
+  nav { flex-wrap: wrap; height: auto; min-height: 64px; padding: 0.8rem 5vw; }
+  .nav-search-box { order: 3; flex-basis: 100%; max-width: 100%; margin-top: 0.5rem; }
+  nav ul {
+    display: none; flex-direction: column; gap: 0.5rem;
+    order: 4; flex-basis: 100%; padding: 1rem 0 0.5rem;
+  }
+  nav.mobile-open ul { display: flex; }
+  nav ul li { width: 100%; }
+  nav ul li a { display: block; padding: 0.6rem 0; font-size: 1rem; }
+  .nav-dropdown-menu {
+    position: static; box-shadow: none; border: none;
+    background: var(--bg); border-radius: 0.8rem; margin-top: 0.4rem;
+    padding: 0.5rem; display: none;
+  }
+  .nav-dropdown.open .nav-dropdown-menu { display: block; }
+  .nav-cta { text-align: center; }
+  .grid { grid-template-columns: 1fr; gap: 1rem; }
+  .card-banner { height: 220px; }
+}
+@media (max-width: 480px) {
+  .grid { grid-template-columns: 1fr; gap: 0.8rem; }
+  .card-banner { height: 200px; }
+  .card-body { padding: 1rem; }
+  .card-name { font-size: 1.05rem; }
+  .hero h1 { font-size: 1.6rem; }
+  .hero p { font-size: 0.9rem; }
 }
 
 /* ── MODAL ── */
@@ -1021,6 +1083,9 @@ nav ul a:hover { color: var(--accent); }
     <input type="password" name="prevent_autofill_pw" style="display:none" tabindex="-1" aria-hidden="true" autocomplete="current-password" />
     <input type="search" id="searchInput" name="search" placeholder="Search businesses, products, tags…" autocomplete="off" role="searchbox" oninput="currentPage=1;filterCards()"/>
   </div>
+  <button class="mobile-menu-btn" onclick="document.querySelector('nav').classList.toggle('mobile-open')" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
   <ul>
     <li class="nav-dropdown">
       <a href="#" class="nav-dropdown-toggle">Categories <span class="nav-chevron">▾</span></a>
@@ -1099,7 +1164,10 @@ nav ul a:hover { color: var(--accent); }
       <span class="section-count" id="countLabel">Showing 0 businesses</span>
     </div>
     <div class="grid" id="cardGrid">
-    <!-- All cards loaded dynamically from the database -->
+    <!-- Loading skeleton shown while data loads -->
+    <div class="skeleton-card"><div class="skeleton-banner"></div><div class="skeleton-body"><div class="skeleton-line w60"></div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-banner"></div><div class="skeleton-body"><div class="skeleton-line w60"></div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-banner"></div><div class="skeleton-body"><div class="skeleton-line w60"></div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div></div>
     </div>
     <div class="pagination" id="pagination"></div>
   </section>
@@ -1890,6 +1958,21 @@ nav ul a:hover { color: var(--accent); }
   }
   document.getElementById('listModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetailModal(); closeModal(); closeReviewModal(); closeAuthModal(); closeProfileModal(); } });
+
+  // Mobile: toggle categories dropdown on click
+  document.querySelector('.nav-dropdown-toggle').addEventListener('click', function(e) {
+    if (window.innerWidth <= 860) {
+      e.preventDefault();
+      this.closest('.nav-dropdown').classList.toggle('open');
+    }
+  });
+  // Close mobile menu when a nav link is clicked
+  document.querySelectorAll('nav ul a').forEach(function(a) {
+    a.addEventListener('click', function() {
+      document.querySelector('nav').classList.remove('mobile-open');
+      document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    });
+  });
 
   // ── Review Modal ──
   let currentReviewBizId = null;
