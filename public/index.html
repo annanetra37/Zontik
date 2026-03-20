@@ -1989,9 +1989,17 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       this.closest('.nav-dropdown').classList.toggle('open');
     }
   });
-  // Close mobile menu when a nav link is clicked
+  // Close mobile menu when a nav link is clicked (skip dropdown items)
   document.querySelectorAll('nav ul a').forEach(function(a) {
     a.addEventListener('click', function() {
+      if (this.closest('.nav-dropdown-menu')) {
+        // Let the category selection apply, then close after a brief moment
+        setTimeout(function() {
+          document.querySelector('nav').classList.remove('mobile-open');
+          document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+        }, 200);
+        return;
+      }
       document.querySelector('nav').classList.remove('mobile-open');
       document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
     });
