@@ -7,30 +7,24 @@ const { getPool, migrate } = require("./db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const JWT_SECRET = process.env.JWT_SECRET || "zontik-secret-change-in-prod";
 
-// ── Email transporter ──
-const mailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587", 10),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
-const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER || "noreply@zontik.com";
+// ── Email setup ──
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const MAIL_FROM = process.env.MAIL_FROM || "onboarding@resend.dev";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
 // Non-blocking email send — logs errors but never blocks the request
-function sendMailAsync(mailOptions) {
-  mailTransporter.sendMail(mailOptions).catch((err) => {
-    console.error("Email send failed:", err.message);
-  });
+function sendMailAsync({ from, to, subject, html }) {
+  if (resend) {
+    resend.emails.send({ from: from || MAIL_FROM, to, subject, html }).catch((err) => {
+      console.error("Email send failed (Resend):", err.message);
+    });
+  } else {
+    console.warn("No RESEND_API_KEY set — skipping email to", to);
+  }
 }
 
 const multer = require("multer");
