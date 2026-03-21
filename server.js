@@ -19,9 +19,19 @@ const mailTransporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER || "noreply@zontik.com";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+
+// Non-blocking email send — logs errors but never blocks the request
+function sendMailAsync(mailOptions) {
+  mailTransporter.sendMail(mailOptions).catch((err) => {
+    console.error("Email send failed:", err.message);
+  });
+}
 
 const multer = require("multer");
 
@@ -246,24 +256,20 @@ app.post("/api/auth/register", async (req, res) => {
     );
     const user = rows[0];
 
-    // Send verification email
+    // Send verification email (non-blocking)
     const verifyUrl = `${BASE_URL}/api/auth/verify?token=${verificationToken}`;
-    try {
-      await mailTransporter.sendMail({
-        from: MAIL_FROM,
-        to: user.email,
-        subject: "Verify your Zontik account",
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
-          <h2 style="color:#7c6ff0">Welcome to Zontik!</h2>
-          <p>Hi ${name.trim()},</p>
-          <p>Please verify your email address to start listing businesses and writing reviews.</p>
-          <a href="${verifyUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Verify My Email</a>
-          <p style="color:#888;font-size:0.85rem">If you didn't create this account, you can ignore this email.</p>
-        </div>`,
-      });
-    } catch (mailErr) {
-      console.error("Failed to send verification email:", mailErr.message);
-    }
+    sendMailAsync({
+      from: MAIL_FROM,
+      to: user.email,
+      subject: "Verify your Zontik account",
+      html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
+        <h2 style="color:#7c6ff0">Welcome to Zontik!</h2>
+        <p>Hi ${name.trim()},</p>
+        <p>Please verify your email address to start listing businesses and writing reviews.</p>
+        <a href="${verifyUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Verify My Email</a>
+        <p style="color:#888;font-size:0.85rem">If you didn't create this account, you can ignore this email.</p>
+      </div>`,
+    });
 
     res.status(201).json({ message: "Account created! Please check your email to verify your account." });
   } catch (err) {
@@ -308,21 +314,17 @@ app.post("/api/auth/resend-verification", async (req, res) => {
       await pool.query("UPDATE users SET verification_token = $1 WHERE id = $2", [vToken, rows[0].id]);
     }
     const verifyUrl = `${BASE_URL}/api/auth/verify?token=${vToken}`;
-    try {
-      await mailTransporter.sendMail({
-        from: MAIL_FROM,
-        to: email.trim().toLowerCase(),
-        subject: "Verify your Zontik account",
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
-          <h2 style="color:#7c6ff0">Verify your email</h2>
-          <p>Hi ${rows[0].name},</p>
-          <p>Click below to verify your email address:</p>
-          <a href="${verifyUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Verify My Email</a>
-        </div>`,
-      });
-    } catch (mailErr) {
-      console.error("Failed to resend verification email:", mailErr.message);
-    }
+    sendMailAsync({
+      from: MAIL_FROM,
+      to: email.trim().toLowerCase(),
+      subject: "Verify your Zontik account",
+      html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
+        <h2 style="color:#7c6ff0">Verify your email</h2>
+        <p>Hi ${rows[0].name},</p>
+        <p>Click below to verify your email address:</p>
+        <a href="${verifyUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Verify My Email</a>
+      </div>`,
+    });
     res.json({ message: "If that email exists, a verification link has been sent." });
   } catch (err) {
     console.error("Resend verification error:", err.message);
@@ -344,22 +346,18 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query("UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3", [resetToken, expires, rows[0].id]);
     const resetUrl = `${BASE_URL}/reset-password.html?token=${resetToken}`;
-    try {
-      await mailTransporter.sendMail({
-        from: MAIL_FROM,
-        to: email.trim().toLowerCase(),
-        subject: "Reset your Zontik password",
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
-          <h2 style="color:#7c6ff0">Reset your password</h2>
-          <p>Hi ${rows[0].name},</p>
-          <p>We received a request to reset your password. Click the button below to choose a new one:</p>
-          <a href="${resetUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Reset Password</a>
-          <p style="color:#888;font-size:0.85rem">This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
-        </div>`,
-      });
-    } catch (mailErr) {
-      console.error("Failed to send reset email:", mailErr.message);
-    }
+    sendMailAsync({
+      from: MAIL_FROM,
+      to: email.trim().toLowerCase(),
+      subject: "Reset your Zontik password",
+      html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
+        <h2 style="color:#7c6ff0">Reset your password</h2>
+        <p>Hi ${rows[0].name},</p>
+        <p>We received a request to reset your password. Click the button below to choose a new one:</p>
+        <a href="${resetUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Reset Password</a>
+        <p style="color:#888;font-size:0.85rem">This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
+      </div>`,
+    });
     res.json({ message: "If that email exists, a reset link has been sent." });
   } catch (err) {
     console.error("Forgot password error:", err.message);
