@@ -310,6 +310,65 @@ app.post("/api/auth/resend-verification", async (req, res) => {
   }
 });
 
+// ── Auth: Forgot password ──
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).json({ error: "Database not available" });
+  const { email } = req.body;
+  if (!email?.trim()) return res.status(400).json({ error: "Email is required" });
+  try {
+    const { rows } = await pool.query("SELECT id, name FROM users WHERE email = $1", [email.trim().toLowerCase()]);
+    // Always return success to prevent email enumeration
+    if (!rows.length) return res.json({ message: "If that email exists, a reset link has been sent." });
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await pool.query("UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3", [resetToken, expires, rows[0].id]);
+    const resetUrl = `${BASE_URL}/reset-password.html?token=${resetToken}`;
+    try {
+      await mailTransporter.sendMail({
+        from: MAIL_FROM,
+        to: email.trim().toLowerCase(),
+        subject: "Reset your Zontik password",
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:2rem">
+          <h2 style="color:#7c6ff0">Reset your password</h2>
+          <p>Hi ${rows[0].name},</p>
+          <p>We received a request to reset your password. Click the button below to choose a new one:</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#7c6ff0;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;margin:1rem 0">Reset Password</a>
+          <p style="color:#888;font-size:0.85rem">This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
+        </div>`,
+      });
+    } catch (mailErr) {
+      console.error("Failed to send reset email:", mailErr.message);
+    }
+    res.json({ message: "If that email exists, a reset link has been sent." });
+  } catch (err) {
+    console.error("Forgot password error:", err.message);
+    res.status(500).json({ error: "Failed to process request" });
+  }
+});
+
+// ── Auth: Reset password ──
+app.post("/api/auth/reset-password", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).json({ error: "Database not available" });
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: "Token and new password are required" });
+  if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+  try {
+    const { rows } = await pool.query(
+      "SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()",
+      [token]
+    );
+    if (!rows.length) return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query("UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2", [hash, rows[0].id]);
+    res.json({ message: "Password has been reset! You can now log in." });
+  } catch (err) {
+    console.error("Reset password error:", err.message);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
 // ── Auth: Login ──
 app.post("/api/auth/login", async (req, res) => {
   const pool = getPool();

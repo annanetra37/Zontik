@@ -206,6 +206,20 @@ async function migrate() {
     END $$;
   `);
 
+  // Add password reset columns
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(200);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+  await p.query(`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMPTZ;
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
+  `);
+
   // One-time cleanup: remove seed/example businesses
   const SEED_DOMAINS = [
     "thespiceroute.at", "pixelsmith.de", "atelierloom.at",
