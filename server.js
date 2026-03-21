@@ -149,6 +149,26 @@ app.get("/api/images/:id/:field", async (req, res) => {
   }
 });
 
+// ── API: Serve additional product photos ──
+app.get("/api/images/:bizId/photos/:photoId", async (req, res) => {
+  const pool = getPool();
+  if (!pool) return res.status(503).end();
+  const bizId = parseInt(req.params.bizId, 10);
+  const photoId = parseInt(req.params.photoId, 10);
+  if (isNaN(bizId) || isNaN(photoId)) return res.status(400).end();
+  try {
+    const { rows } = await pool.query("SELECT photo FROM product_photos WHERE id = $1 AND business_id = $2", [photoId, bizId]);
+    if (!rows.length || !rows[0].photo) return res.status(404).end();
+    const dataUrl = rows[0].photo;
+    if (/^https?:\/\//i.test(dataUrl)) { res.set("Cache-Control", "public, max-age=86400"); return res.redirect(dataUrl); }
+    const match = dataUrl.match(/^data:(image\/[\w+.-]+);base64,([\s\S]+)$/);
+    if (!match) return res.status(404).end();
+    res.set("Content-Type", match[1]);
+    res.set("Cache-Control", "public, max-age=300");
+    res.send(Buffer.from(match[2], "base64"));
+  } catch { res.status(500).end(); }
+});
+
 // Health check
 app.get("/health", async (_req, res) => {
   const pool = getPool();
@@ -490,6 +510,7 @@ app.get("/api/businesses", async (_req, res) => {
 app.post("/api/businesses", authRequired, upload.fields([
   { name: "logo", maxCount: 1 },
   { name: "product_photo", maxCount: 1 },
+  { name: "product_photos", maxCount: 10 },
 ]), async (req, res) => {
   const pool = getPool();
   if (!pool) {
@@ -558,14 +579,15 @@ app.post("/api/businesses", authRequired, upload.fields([
   console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
   try {
-    await pool.query(
+    const result = await pool.query(
       `INSERT INTO businesses
         (name, category, description, website, website_domain, city, country, address,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
          instagram, facebook, linkedin, tiktok, approved,
          user_id, logo, product_photo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,TRUE,$21,$22,$23)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,TRUE,$21,$22,$23)
+       RETURNING id`,
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
         city.trim(), (country || "").trim(), address?.trim() || null,
@@ -579,6 +601,16 @@ app.post("/api/businesses", authRequired, upload.fields([
         req.user.id, logoData, productPhotoData,
       ]
     );
+    const newBizId = result.rows[0].id;
+
+    // Save additional product photos
+    if (req.files?.product_photos?.length) {
+      for (let i = 0; i < req.files.product_photos.length; i++) {
+        const photoData = fileToBase64(req.files.product_photos[i]);
+        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [newBizId, photoData, i]);
+      }
+    }
+
     console.log(`Business "${name}" saved and live (owner: user #${req.user.id})`);
     invalidateBusinessesCache();
     res.status(201).json({ message: "Business listed successfully! It's now live on Zoncik." });
@@ -595,6 +627,7 @@ app.post("/api/businesses", authRequired, upload.fields([
 app.put("/api/businesses/:id", authRequired, upload.fields([
   { name: "logo", maxCount: 1 },
   { name: "product_photo", maxCount: 1 },
+  { name: "product_photos", maxCount: 10 },
 ]), async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
@@ -672,6 +705,27 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
         logoData, productPhotoData, id,
       ]
     );
+    // Handle additional product photos
+    // Delete photos the user removed
+    const keepPhotoIds = req.body.keep_photo_ids;
+    if (keepPhotoIds !== undefined) {
+      const idsToKeep = (Array.isArray(keepPhotoIds) ? keepPhotoIds : [keepPhotoIds]).filter(Boolean).map(Number);
+      if (idsToKeep.length) {
+        await pool.query("DELETE FROM product_photos WHERE business_id = $1 AND id != ALL($2::int[])", [id, idsToKeep]);
+      } else {
+        await pool.query("DELETE FROM product_photos WHERE business_id = $1", [id]);
+      }
+    }
+    // Add new photos
+    if (req.files?.product_photos?.length) {
+      const { rows: maxOrder } = await pool.query("SELECT COALESCE(MAX(sort_order), -1) AS mx FROM product_photos WHERE business_id = $1", [id]);
+      let order = (maxOrder[0]?.mx ?? -1) + 1;
+      for (const file of req.files.product_photos) {
+        const photoData = fileToBase64(file);
+        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [id, photoData, order++]);
+      }
+    }
+
     console.log(`Business #${id} updated by user #${req.user.id}`);
     invalidateBusinessesCache();
     res.json({ message: "Business updated successfully!" });
@@ -725,6 +779,14 @@ app.get("/api/businesses/:id", async (req, res) => {
     b.logo = resolveImageUrl(b.id, 'logo', b.logo_prefix, true);
     b.product_photo = resolveImageUrl(b.id, 'product_photo', b.photo_prefix, true);
     delete b.logo_prefix; delete b.photo_prefix;
+
+    // Fetch additional product photos
+    const { rows: photos } = await pool.query(
+      "SELECT id, sort_order FROM product_photos WHERE business_id = $1 ORDER BY sort_order, id",
+      [id]
+    );
+    b.product_photos = photos.map(p => ({ id: p.id, url: `/api/images/${id}/photos/${p.id}?v=${Date.now()}` }));
+
     res.json(b);
   } catch (err) {
     console.error("GET /api/businesses/:id error:", err.message);
