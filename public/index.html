@@ -285,6 +285,60 @@ nav ul a:hover { color: var(--accent); }
   box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #fff;
   z-index: 1;
 }
+/* ── SLIDESHOW ── */
+.slideshow { position: relative; width: 100%; height: 100%; }
+.slideshow-slides {
+  display: flex; width: 100%; height: 100%; overflow: hidden;
+  transition: transform 0.35s ease;
+}
+.slideshow-slide {
+  min-width: 100%; height: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.slideshow-slide img { width: 100%; height: 100%; object-fit: cover; }
+.slideshow-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.9); border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer; z-index: 3; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink); transition: background 0.15s, transform 0.15s;
+}
+.slideshow-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.slideshow-arrow.prev { left: 0.75rem; }
+.slideshow-arrow.next { right: 0.75rem; }
+.slideshow-dots {
+  position: absolute; bottom: 0.75rem; left: 50%;
+  transform: translateX(-50%); display: flex; gap: 6px; z-index: 3;
+}
+.slideshow-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.5); border: none; cursor: pointer;
+  transition: background 0.2s, transform 0.2s; padding: 0;
+}
+.slideshow-dot.active { background: #fff; transform: scale(1.3); }
+.slideshow-counter {
+  position: absolute; top: 0.75rem; left: 0.75rem;
+  background: rgba(0,0,0,0.5); color: #fff; font-size: 0.75rem;
+  font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 999px; z-index: 3;
+}
+/* Multi-photo upload */
+.extra-photos-area {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;
+}
+.extra-photo-thumb {
+  position: relative; width: 80px; height: 80px; border-radius: 0.5rem;
+  overflow: hidden; border: 1.5px solid var(--border);
+}
+.extra-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.extra-photo-thumb .remove-photo {
+  position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+  background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%;
+  font-size: 0.7rem; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; line-height: 1;
+}
 .detail-body { padding: 1.5rem; }
 .detail-body.has-logo { padding-top: 1.5rem; }
 .detail-category {
@@ -1365,6 +1419,15 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
           <div class="form-group"><label>Logo</label><div class="img-upload-area" id="logoUploadArea"><div class="img-upload-label">Click or drag to upload logo</div><div class="form-hint">Square image works best. Max 5MB.</div><input type="file" id="f_logo" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewImage(this, 'logoUploadArea')" /></div></div>
           <div class="form-group"><label>Product Photo</label><div class="img-upload-area" id="photoUploadArea"><div class="img-upload-label">Click or drag to upload a product photo</div><div class="form-hint">Shown as card banner. Max 5MB.</div><input type="file" id="f_product_photo" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewImage(this, 'photoUploadArea')" /></div></div>
         </div>
+        <div class="form-group" style="margin-top:0.5rem">
+          <label>Additional Product Photos <span style="color:var(--ink-soft);font-weight:400;font-size:0.8rem">(up to 10)</span></label>
+          <div class="img-upload-area" id="extraPhotosUploadArea" style="min-height:auto;padding:0.8rem">
+            <div class="extra-photos-area" id="extraPhotosPreviews"></div>
+            <div style="margin-top:0.5rem"><button type="button" class="btn-submit" style="padding:0.4rem 1rem;font-size:0.82rem;width:auto" onclick="document.getElementById('f_extra_photos').click()">+ Add Photos</button></div>
+            <div class="form-hint" style="margin-top:0.3rem">Shown in slideshow on your listing. Max 5MB each.</div>
+            <input type="file" id="f_extra_photos" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none" onchange="handleExtraPhotos(this)" />
+          </div>
+        </div>
       </div>
 
       <div class="form-section">
@@ -1715,6 +1778,114 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     document.getElementById(fileId).value = '';
     area.dataset.removed = 'true';
   }
+
+  // ── Extra product photos ──
+  let extraPhotosFiles = [];    // new File objects to upload
+  let existingExtraPhotos = []; // { id, url } from server (when editing)
+
+  function handleExtraPhotos(input) {
+    if (!input.files) return;
+    const total = extraPhotosFiles.length + existingExtraPhotos.length;
+    for (let i = 0; i < input.files.length && total + i < 10; i++) {
+      const f = input.files[i];
+      if (f.size > 5 * 1024 * 1024) { alert('File "' + f.name + '" is too large (max 5MB). Skipped.'); continue; }
+      extraPhotosFiles.push(f);
+    }
+    input.value = '';
+    renderExtraPhotoPreviews();
+  }
+
+  function renderExtraPhotoPreviews() {
+    const container = document.getElementById('extraPhotosPreviews');
+    container.innerHTML = '';
+    existingExtraPhotos.forEach(function(p, i) {
+      const thumb = document.createElement('div'); thumb.className = 'extra-photo-thumb';
+      thumb.innerHTML = '<img src="' + esc(p.url) + '" alt=""/><button type="button" class="remove-photo" title="Remove">&times;</button>';
+      thumb.querySelector('.remove-photo').addEventListener('click', function() { existingExtraPhotos.splice(i, 1); renderExtraPhotoPreviews(); });
+      container.appendChild(thumb);
+    });
+    extraPhotosFiles.forEach(function(f, i) {
+      const thumb = document.createElement('div'); thumb.className = 'extra-photo-thumb';
+      const img = document.createElement('img'); img.src = URL.createObjectURL(f);
+      thumb.appendChild(img);
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'remove-photo'; btn.title = 'Remove'; btn.textContent = '\u00d7';
+      btn.addEventListener('click', function() { extraPhotosFiles.splice(i, 1); renderExtraPhotoPreviews(); });
+      thumb.appendChild(btn);
+      container.appendChild(thumb);
+    });
+  }
+
+  function resetExtraPhotos() {
+    extraPhotosFiles = []; existingExtraPhotos = [];
+    const container = document.getElementById('extraPhotosPreviews');
+    if (container) container.innerHTML = '';
+    const input = document.getElementById('f_extra_photos');
+    if (input) input.value = '';
+  }
+
+  // ── Slideshow ──
+  let slideshowIndex = 0;
+  let slideshowPhotos = [];
+
+  function initSlideshow(photos) {
+    slideshowPhotos = photos;
+    slideshowIndex = 0;
+    const banner = document.getElementById('detailBanner');
+    if (photos.length <= 1) return; // no slideshow needed for 0-1 photos
+
+    let html = '<div class="slideshow"><div class="slideshow-slides" id="slideshowSlides">';
+    photos.forEach(function(url, i) {
+      html += '<div class="slideshow-slide"><img src="' + esc(url) + '" alt="" onerror="this.style.display=\'none\'"/></div>';
+    });
+    html += '</div>';
+    html += '<button class="slideshow-arrow prev" onclick="slideshowNav(-1)">&#8249;</button>';
+    html += '<button class="slideshow-arrow next" onclick="slideshowNav(1)">&#8250;</button>';
+    html += '<div class="slideshow-counter" id="slideshowCounter">1 / ' + photos.length + '</div>';
+    if (photos.length <= 10) {
+      html += '<div class="slideshow-dots" id="slideshowDots">';
+      photos.forEach(function(_, i) {
+        html += '<button class="slideshow-dot' + (i === 0 ? ' active' : '') + '" onclick="slideshowGoTo(' + i + ')"></button>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Keep close button and logo
+    const closeBtn = banner.querySelector('.detail-close');
+    const logo = banner.querySelector('.detail-logo');
+    banner.innerHTML = html;
+    if (closeBtn) banner.appendChild(closeBtn);
+    if (logo) banner.appendChild(logo);
+  }
+
+  function slideshowNav(dir) {
+    slideshowGoTo(slideshowIndex + dir);
+  }
+
+  function slideshowGoTo(idx) {
+    if (slideshowPhotos.length === 0) return;
+    slideshowIndex = ((idx % slideshowPhotos.length) + slideshowPhotos.length) % slideshowPhotos.length;
+    const slides = document.getElementById('slideshowSlides');
+    if (slides) slides.style.transform = 'translateX(-' + (slideshowIndex * 100) + '%)';
+    const counter = document.getElementById('slideshowCounter');
+    if (counter) counter.textContent = (slideshowIndex + 1) + ' / ' + slideshowPhotos.length;
+    document.querySelectorAll('#slideshowDots .slideshow-dot').forEach(function(dot, i) {
+      dot.classList.toggle('active', i === slideshowIndex);
+    });
+  }
+
+  // Swipe support for slideshow
+  (function() {
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e) {
+      if (e.target.closest('.slideshow')) touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      if (!e.target.closest('.slideshow') || !slideshowPhotos.length) return;
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) slideshowNav(diff > 0 ? 1 : -1);
+    }, { passive: true });
+  })();
 
   // ── State ──
   let activeFilter = 'all';
@@ -2225,6 +2396,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     const productFile = document.getElementById('f_product_photo').files[0];
     if (logoFile) formData.append('logo', logoFile);
     if (productFile) formData.append('product_photo', productFile);
+    extraPhotosFiles.forEach(function(f) { formData.append('product_photos', f); });
 
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true; btn.textContent = 'Submitting…';
@@ -2286,6 +2458,12 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       if (b.logo) { const area = document.getElementById('logoUploadArea'); const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.logo; area.appendChild(img); addRemoveBtn(area, 'logoUploadArea'); }
       if (b.product_photo) { const area = document.getElementById('photoUploadArea'); const img = document.createElement('img'); img.className = 'preview-img'; img.src = b.product_photo; area.appendChild(img); addRemoveBtn(area, 'photoUploadArea'); }
       document.getElementById('f_logo').value = ''; document.getElementById('f_product_photo').value = '';
+      // Load existing extra photos
+      resetExtraPhotos();
+      if (b.product_photos && b.product_photos.length) {
+        existingExtraPhotos = b.product_photos.map(function(p) { return { id: p.id, url: p.url }; });
+        renderExtraPhotoPreviews();
+      }
       document.querySelector('#listModal .modal-title').textContent = 'Edit Your Business';
       document.getElementById('btnSubmit').textContent = 'Save Changes';
       document.getElementById('btnSubmit').setAttribute('onclick', 'submitEditBusiness()');
@@ -2338,6 +2516,9 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     const productFile = document.getElementById('f_product_photo').files[0];
     if (logoFile) formData.append('logo', logoFile);
     if (productFile) formData.append('product_photo', productFile);
+    // Extra photos: send IDs to keep + new files
+    existingExtraPhotos.forEach(function(p) { formData.append('keep_photo_ids', p.id); });
+    extraPhotosFiles.forEach(function(f) { formData.append('product_photos', f); });
 
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true; btn.textContent = 'Saving…';
@@ -2363,6 +2544,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     document.querySelectorAll('#priceOpts .price-opt').forEach(b => b.classList.remove('selected'));
     document.querySelector('#priceOpts .price-opt').classList.add('selected');
     ['logoUploadArea','photoUploadArea'].forEach(id => { const area = document.getElementById(id); const img = area.querySelector('.preview-img'); if (img) img.remove(); const btn = area.querySelector('.img-remove-btn'); if (btn) btn.remove(); area.dataset.removed = ''; });
+    resetExtraPhotos();
     document.getElementById('formError').style.display = 'none';
   }
 
@@ -2386,7 +2568,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     const banner = document.getElementById('detailBanner');
     const body = document.getElementById('detailBody');
 
-    // Banner
+    // Banner — initial render (before extra photos load)
     let bannerHtml = '';
     if (b.product_photo) {
       bannerHtml += '<img src="' + esc(b.product_photo) + '" alt="" onerror="this.remove();this.parentElement.insertAdjacentHTML(\'afterbegin\',\'<span class=detail-emoji>' + esc(b.emoji || '🏪') + '</span>\')"/>';
@@ -2398,6 +2580,18 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       bannerHtml += '<img class="detail-logo" src="' + esc(b.logo) + '" alt="" onerror="this.remove()"/>';
     }
     banner.innerHTML = bannerHtml;
+
+    // Fetch extra photos and init slideshow
+    fetch('/api/businesses/' + bizId).then(function(r) { return r.json(); }).then(function(full) {
+      var allPhotos = [];
+      if (full.product_photo) allPhotos.push(full.product_photo);
+      if (full.product_photos && full.product_photos.length) {
+        full.product_photos.forEach(function(p) { allPhotos.push(p.url); });
+      }
+      if (allPhotos.length > 1) {
+        initSlideshow(allPhotos);
+      }
+    }).catch(function() {});
 
     // Body
     const avgRating = parseFloat(b.avg_rating) || 0;

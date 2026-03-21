@@ -206,6 +206,18 @@ async function migrate() {
     END $$;
   `);
 
+  // Product photos table (multiple photos per business)
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS product_photos (
+      id          SERIAL PRIMARY KEY,
+      business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+      photo       TEXT NOT NULL,
+      sort_order  INTEGER DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  await p.query(`CREATE INDEX IF NOT EXISTS idx_product_photos_biz ON product_photos(business_id, sort_order);`);
+
   // Add password reset columns
   await p.query(`
     DO $$ BEGIN
