@@ -19,11 +19,18 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 // Non-blocking email send — logs errors but never blocks the request
 function sendMailAsync({ from, to, subject, html }) {
   if (resend) {
-    resend.emails.send({ from: from || MAIL_FROM, to, subject, html }).catch((err) => {
-      console.error("Email send failed (Resend):", err.message);
-    });
+    const recipient = Array.isArray(to) ? to : [to];
+    console.log("Sending email via Resend to:", recipient.join(", "));
+    resend.emails
+      .send({ from: from || MAIL_FROM, to: recipient, subject, html })
+      .then((result) => {
+        console.log("Email sent successfully:", JSON.stringify(result));
+      })
+      .catch((err) => {
+        console.error("Email send failed (Resend):", JSON.stringify(err));
+      });
   } else {
-    console.warn("No RESEND_API_KEY set — skipping email to", to);
+    console.warn("⚠ No RESEND_API_KEY set — skipping email to", to);
   }
 }
 
