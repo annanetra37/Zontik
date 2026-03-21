@@ -1478,6 +1478,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       </div>
       <div class="form-group" style="margin-bottom:0.75rem"><label>Email <span class="req">*</span></label><input type="email" id="a_email" placeholder="you@example.com" maxlength="254" /></div>
       <div class="form-group" style="margin-bottom:0.75rem"><label>Password <span class="req">*</span></label><div class="password-wrap"><input type="password" id="a_password" placeholder="Min. 6 characters" /><button type="button" class="pw-toggle" onclick="togglePassword()" id="pwToggleBtn" title="Show password">👁</button></div></div>
+      <div id="authForgotRow" style="text-align:right;margin:-0.3rem 0 0.75rem;font-size:0.82rem"><a href="#" onclick="openForgotPassword();return false" style="color:var(--accent);font-weight:600">Forgot password?</a></div>
       <button class="btn-submit" id="btnAuth" onclick="submitAuth()" style="width:100%">Log in</button>
       <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--ink-soft)">
         <span id="authSwitchText">Don't have an account?</span>
@@ -1552,12 +1553,14 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     if (mode === 'register') {
       document.getElementById('authModalTitle').textContent = 'Create Account';
       document.getElementById('authRegisterFields').style.display = 'block';
+      document.getElementById('authForgotRow').style.display = 'none';
       document.getElementById('btnAuth').textContent = 'Sign up';
       document.getElementById('authSwitchText').textContent = 'Already have an account?';
       document.getElementById('authSwitchLink').textContent = 'Log in';
     } else {
       document.getElementById('authModalTitle').textContent = 'Log in';
       document.getElementById('authRegisterFields').style.display = 'none';
+      document.getElementById('authForgotRow').style.display = 'block';
       document.getElementById('btnAuth').textContent = 'Log in';
       document.getElementById('authSwitchText').textContent = "Don't have an account?";
       document.getElementById('authSwitchLink').textContent = 'Sign up';
@@ -1574,6 +1577,8 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('authModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAuthModal(); });
   function switchAuthMode() { openAuthModal(authMode === 'login' ? 'register' : 'login'); }
+
+  let pendingVerifyEmail = '';
 
   async function submitAuth() {
     const errBanner = document.getElementById('authError');
@@ -1595,7 +1600,9 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       const data = await res.json();
       if (!res.ok) {
         if (data.unverified) {
-          errBanner.innerHTML = esc(data.error) + ' <a href="#" onclick="resendVerification(\'' + esc(data.email) + '\');return false" style="color:var(--accent);font-weight:600">Resend email</a>';
+          pendingVerifyEmail = data.email || email;
+          errBanner.innerHTML = esc(data.error) + ' <a href="#" id="resendLink" style="color:var(--accent);font-weight:600">Resend email</a>';
+          document.getElementById('resendLink').addEventListener('click', function(e) { e.preventDefault(); resendVerification(); });
         } else {
           errBanner.textContent = data.error || 'Something went wrong';
         }
@@ -1604,24 +1611,69 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
         setAuth(data.token, data.user); closeAuthModal(); loadBusinesses();
       } else {
         // Registration success — show verification message
+        pendingVerifyEmail = email;
         document.getElementById('authModalBody').innerHTML =
           '<div style="text-align:center;padding:1.5rem 0">' +
           '<div style="font-size:2.5rem;margin-bottom:1rem">📧</div>' +
           '<h3 style="margin:0 0 0.75rem">Check your email!</h3>' +
           '<p style="color:var(--ink-soft);margin:0 0 1rem">We sent a verification link to <strong>' + esc(email) + '</strong>. Click the link to activate your account.</p>' +
-          '<p style="color:var(--ink-soft);font-size:0.85rem">Didn\'t receive it? <a href="#" onclick="resendVerification(\'' + esc(email) + '\');return false" style="color:var(--accent);font-weight:600">Resend</a></p>' +
+          '<p style="color:var(--ink-soft);font-size:0.85rem">Didn\'t receive it? <a href="#" id="resendLink2" style="color:var(--accent);font-weight:600">Resend</a></p>' +
           '</div>';
+        document.getElementById('resendLink2').addEventListener('click', function(e) { e.preventDefault(); resendVerification(); });
       }
     } catch { errBanner.textContent = 'Network error — please try again'; errBanner.style.display = 'block'; }
     btn.disabled = false; btn.textContent = authMode === 'login' ? 'Log in' : 'Sign up';
   }
 
-  async function resendVerification(email) {
+  async function resendVerification() {
+    const email = pendingVerifyEmail;
+    if (!email) return;
     try {
       const res = await fetch('/api/auth/resend-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
       const data = await res.json();
-      alert(data.message || 'Verification email sent!');
-    } catch { alert('Network error — please try again'); }
+      const link = document.getElementById('resendLink') || document.getElementById('resendLink2');
+      if (link) { link.textContent = 'Sent!'; link.style.color = '#10b981'; setTimeout(function() { link.textContent = 'Resend email'; link.style.color = 'var(--accent)'; }, 3000); }
+    } catch {
+      const link = document.getElementById('resendLink') || document.getElementById('resendLink2');
+      if (link) { link.textContent = 'Failed — try again'; link.style.color = '#d9363e'; setTimeout(function() { link.textContent = 'Resend email'; link.style.color = 'var(--accent)'; }, 3000); }
+    }
+  }
+
+  // ── Forgot Password ──
+  function openForgotPassword() {
+    document.getElementById('authModalTitle').textContent = 'Reset Password';
+    document.getElementById('authModalBody').innerHTML =
+      '<div class="form-error-banner" id="forgotError" style="display:none"></div>' +
+      '<p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:1rem">Enter your email and we\'ll send you a link to reset your password.</p>' +
+      '<div class="form-group" style="margin-bottom:0.75rem"><label>Email <span class="req">*</span></label><input type="email" id="forgot_email" placeholder="you@example.com" maxlength="254" /></div>' +
+      '<button class="btn-submit" id="btnForgot" style="width:100%">Send Reset Link</button>' +
+      '<div style="text-align:center;margin-top:1rem;font-size:0.85rem">' +
+      '<a href="#" id="backToLogin" style="color:var(--accent);font-weight:600">Back to Log in</a></div>';
+    document.getElementById('btnForgot').addEventListener('click', submitForgotPassword);
+    document.getElementById('backToLogin').addEventListener('click', function(e) { e.preventDefault(); openAuthModal('login'); });
+  }
+
+  async function submitForgotPassword() {
+    const errBanner = document.getElementById('forgotError');
+    errBanner.style.display = 'none';
+    const email = document.getElementById('forgot_email').value.trim();
+    if (!email) { errBanner.textContent = 'Please enter your email'; errBanner.style.display = 'block'; return; }
+    const btn = document.getElementById('btnForgot');
+    btn.disabled = true; btn.textContent = 'Sending...';
+    try {
+      const res = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const data = await res.json();
+      document.getElementById('authModalBody').innerHTML =
+        '<div style="text-align:center;padding:1.5rem 0">' +
+        '<div style="font-size:2.5rem;margin-bottom:1rem">📧</div>' +
+        '<h3 style="margin:0 0 0.75rem">Check your email!</h3>' +
+        '<p style="color:var(--ink-soft);margin:0 0 1rem">If an account exists for <strong>' + esc(email) + '</strong>, we\'ve sent a password reset link.</p>' +
+        '<button class="btn-submit" id="backToLogin2" style="width:100%;margin-top:0.5rem">Back to Log in</button></div>';
+      document.getElementById('backToLogin2').addEventListener('click', function() { openAuthModal('login'); });
+    } catch {
+      errBanner.textContent = 'Network error — please try again'; errBanner.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send Reset Link';
+    }
   }
 
   function previewImage(input, areaId) {
