@@ -14,7 +14,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "resend": "^6.9.4"
   },
   "engines": {
     "node": ">=18"
