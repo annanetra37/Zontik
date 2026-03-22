@@ -111,19 +111,41 @@ function normalizeUrl(url) {
 
 const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "experiences"];
 
-// Helper: convert uploaded file buffer to base64 data URL for DB storage
-function fileToBase64(file) {
-  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+// Helper: save uploaded file to public/uploads and return the public URL path
+const UPLOADS_DIR = path.join(__dirname, "public", "uploads");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+function saveUploadedFile(file, bizId, fieldName, index) {
+  const ext = path.extname(file.originalname || "").toLowerCase() || mimeToExt(file.mimetype);
+  const suffix = index !== undefined ? `_${index}` : "";
+  const filename = `${bizId}_${fieldName}${suffix}_${Date.now()}${ext}`;
+  const filePath = path.join(UPLOADS_DIR, filename);
+  fs.writeFileSync(filePath, file.buffer);
+  return `/uploads/${filename}`;
+}
+
+function mimeToExt(mime) {
+  const map = { "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp" };
+  return map[mime] || ".jpg";
+}
+
+// Helper: delete an uploaded file given its public URL path
+function deleteUploadedFile(urlPath) {
+  if (!urlPath || !urlPath.startsWith("/uploads/")) return;
+  const filePath = path.join(__dirname, "public", urlPath);
+  try { fs.unlinkSync(filePath); } catch { /* file may not exist */ }
 }
 
 // Helper: resolve image field to a public URL for the frontend.
-// For listings we use a prefix (LEFT(col, 8)) to avoid loading full base64 blobs.
+// For listings we use a prefix (LEFT(col, 512)) to avoid loading full base64 blobs.
 // For single business detail we have the full value.
 function resolveImageUrl(id, field, valueOrPrefix, bustCache) {
   if (!valueOrPrefix) return null;
   // External URL — return directly
   if (/^https?:\/\//i.test(valueOrPrefix)) return valueOrPrefix;
-  // base64 data URL — serve through our image endpoint
+  // Local file path (new format) — return directly
+  if (valueOrPrefix.startsWith("/uploads/")) return bustCache ? `${valueOrPrefix}?v=${Date.now()}` : valueOrPrefix;
+  // base64 data URL (legacy) — serve through our image endpoint
   const url = `/api/images/${id}/${field}`;
   return bustCache ? `${url}?v=${Date.now()}` : url;
 }
@@ -500,13 +522,17 @@ app.get("/api/businesses", async (_req, res) => {
     const bizIds = rows.map(r => r.id);
     if (bizIds.length) {
       const { rows: photos } = await pool.query(
-        "SELECT id, business_id FROM product_photos WHERE business_id = ANY($1::int[]) ORDER BY sort_order, id",
+        "SELECT id, business_id, LEFT(photo, 512) AS photo_prefix FROM product_photos WHERE business_id = ANY($1::int[]) ORDER BY sort_order, id",
         [bizIds]
       );
       const photosByBiz = {};
       photos.forEach(p => {
         if (!photosByBiz[p.business_id]) photosByBiz[p.business_id] = [];
-        photosByBiz[p.business_id].push({ id: p.id, url: `/api/images/${p.business_id}/photos/${p.id}` });
+        // Use direct URL for file-based photos, fallback to API endpoint for legacy base64
+        const url = (p.photo_prefix && p.photo_prefix.startsWith("/uploads/"))
+          ? p.photo_prefix
+          : `/api/images/${p.business_id}/photos/${p.id}`;
+        photosByBiz[p.business_id].push({ id: p.id, url });
       });
       rows.forEach(r => { r.product_photos = photosByBiz[r.id] || []; });
     }
@@ -585,23 +611,18 @@ app.post("/api/businesses", authRequired, upload.fields([
     websiteDomain = website.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
   }
 
-  // Handle image uploads — store as base64 data URLs in DB
-  let logoData = null;
-  let productPhotoData = null;
-  if (req.files?.logo?.[0]) logoData = fileToBase64(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoData = fileToBase64(req.files.product_photo[0]);
-
   console.log(`New business submission: "${name}" (${category}) from ${city}, ${country} — domain: ${websiteDomain}`);
 
   try {
+    // First insert without images to get the business ID
     const result = await pool.query(
       `INSERT INTO businesses
         (name, category, description, website, website_domain, city, country, address,
          contact_email, contact_phone, price_range, tags, emoji,
          year_founded, owner_name, short_tagline,
          instagram, facebook, linkedin, tiktok, approved,
-         user_id, logo, product_photo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,TRUE,$21,$22,$23)
+         user_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,TRUE,$21)
        RETURNING id`,
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
@@ -613,16 +634,25 @@ app.post("/api/businesses", authRequired, upload.fields([
         owner_name?.trim() || null, short_tagline?.trim() || null,
         instagram?.trim() || null, facebook?.trim() || null,
         linkedin?.trim() || null, tiktok?.trim() || null,
-        req.user.id, logoData, productPhotoData,
+        req.user.id,
       ]
     );
     const newBizId = result.rows[0].id;
 
+    // Save images to disk and store public URL paths in DB
+    let logoUrl = null;
+    let productPhotoUrl = null;
+    if (req.files?.logo?.[0]) logoUrl = saveUploadedFile(req.files.logo[0], newBizId, "logo");
+    if (req.files?.product_photo?.[0]) productPhotoUrl = saveUploadedFile(req.files.product_photo[0], newBizId, "product_photo");
+    if (logoUrl || productPhotoUrl) {
+      await pool.query("UPDATE businesses SET logo = $1, product_photo = $2 WHERE id = $3", [logoUrl, productPhotoUrl, newBizId]);
+    }
+
     // Save additional product photos
     if (req.files?.product_photos?.length) {
       for (let i = 0; i < req.files.product_photos.length; i++) {
-        const photoData = fileToBase64(req.files.product_photos[i]);
-        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [newBizId, photoData, i]);
+        const photoUrl = saveUploadedFile(req.files.product_photos[i], newBizId, "photo", i);
+        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [newBizId, photoUrl, i]);
       }
     }
 
@@ -693,11 +723,21 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
     websiteDomain = website.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
   }
 
-  // Handle image uploads — new upload replaces, otherwise keep existing DB data
-  let logoData = req.body.keep_logo === "true" ? biz[0].logo : null;
-  let productPhotoData = req.body.keep_product_photo === "true" ? biz[0].product_photo : null;
-  if (req.files?.logo?.[0]) logoData = fileToBase64(req.files.logo[0]);
-  if (req.files?.product_photo?.[0]) productPhotoData = fileToBase64(req.files.product_photo[0]);
+  // Handle image uploads — new upload replaces, otherwise keep existing
+  let logoUrl = req.body.keep_logo === "true" ? biz[0].logo : null;
+  let productPhotoUrl = req.body.keep_product_photo === "true" ? biz[0].product_photo : null;
+  if (req.files?.logo?.[0]) {
+    deleteUploadedFile(biz[0].logo); // clean up old file
+    logoUrl = saveUploadedFile(req.files.logo[0], id, "logo");
+  } else if (!logoUrl) {
+    deleteUploadedFile(biz[0].logo);
+  }
+  if (req.files?.product_photo?.[0]) {
+    deleteUploadedFile(biz[0].product_photo);
+    productPhotoUrl = saveUploadedFile(req.files.product_photo[0], id, "product_photo");
+  } else if (!productPhotoUrl) {
+    deleteUploadedFile(biz[0].product_photo);
+  }
 
   try {
     await pool.query(
@@ -717,14 +757,25 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
         owner_name?.trim() || null, short_tagline?.trim() || null,
         instagram?.trim() || null, facebook?.trim() || null,
         linkedin?.trim() || null, tiktok?.trim() || null,
-        logoData, productPhotoData, id,
+        logoUrl, productPhotoUrl, id,
       ]
     );
     // Handle additional product photos
-    // Delete photos the user removed
+    // Delete photos the user removed (clean up files from disk)
     const keepPhotoIds = req.body.keep_photo_ids;
     if (keepPhotoIds !== undefined) {
       const idsToKeep = (Array.isArray(keepPhotoIds) ? keepPhotoIds : [keepPhotoIds]).filter(Boolean).map(Number);
+      // Fetch photos to delete so we can clean up files
+      let delQuery, delParams;
+      if (idsToKeep.length) {
+        delQuery = "SELECT id, photo FROM product_photos WHERE business_id = $1 AND id != ALL($2::int[])";
+        delParams = [id, idsToKeep];
+      } else {
+        delQuery = "SELECT id, photo FROM product_photos WHERE business_id = $1";
+        delParams = [id];
+      }
+      const { rows: toDelete } = await pool.query(delQuery, delParams);
+      toDelete.forEach(p => deleteUploadedFile(p.photo));
       if (idsToKeep.length) {
         await pool.query("DELETE FROM product_photos WHERE business_id = $1 AND id != ALL($2::int[])", [id, idsToKeep]);
       } else {
@@ -735,9 +786,9 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
     if (req.files?.product_photos?.length) {
       const { rows: maxOrder } = await pool.query("SELECT COALESCE(MAX(sort_order), -1) AS mx FROM product_photos WHERE business_id = $1", [id]);
       let order = (maxOrder[0]?.mx ?? -1) + 1;
-      for (const file of req.files.product_photos) {
-        const photoData = fileToBase64(file);
-        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [id, photoData, order++]);
+      for (let i = 0; i < req.files.product_photos.length; i++) {
+        const photoUrl = saveUploadedFile(req.files.product_photos[i], id, "photo", order);
+        await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [id, photoUrl, order++]);
       }
     }
 
@@ -758,9 +809,14 @@ app.delete("/api/businesses/:id", authRequired, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid business ID" });
   try {
-    const { rows } = await pool.query("SELECT user_id FROM businesses WHERE id = $1", [id]);
+    const { rows } = await pool.query("SELECT user_id, logo, product_photo FROM businesses WHERE id = $1", [id]);
     if (!rows.length) return res.status(404).json({ error: "Business not found" });
     if (rows[0].user_id !== req.user.id) return res.status(403).json({ error: "You can only delete your own businesses" });
+    // Clean up uploaded files
+    deleteUploadedFile(rows[0].logo);
+    deleteUploadedFile(rows[0].product_photo);
+    const { rows: photos } = await pool.query("SELECT photo FROM product_photos WHERE business_id = $1", [id]);
+    photos.forEach(p => deleteUploadedFile(p.photo));
     await pool.query("DELETE FROM reviews WHERE business_id = $1", [id]);
     await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
     console.log(`Business #${id} deleted by user #${req.user.id}`);
@@ -797,10 +853,15 @@ app.get("/api/businesses/:id", async (req, res) => {
 
     // Fetch additional product photos
     const { rows: photos } = await pool.query(
-      "SELECT id, sort_order FROM product_photos WHERE business_id = $1 ORDER BY sort_order, id",
+      "SELECT id, LEFT(photo, 512) AS photo_prefix, sort_order FROM product_photos WHERE business_id = $1 ORDER BY sort_order, id",
       [id]
     );
-    b.product_photos = photos.map(p => ({ id: p.id, url: `/api/images/${id}/photos/${p.id}?v=${Date.now()}` }));
+    b.product_photos = photos.map(p => {
+      const url = (p.photo_prefix && p.photo_prefix.startsWith("/uploads/"))
+        ? `${p.photo_prefix}?v=${Date.now()}`
+        : `/api/images/${id}/photos/${p.id}?v=${Date.now()}`;
+      return { id: p.id, url };
+    });
 
     res.json(b);
   } catch (err) {
