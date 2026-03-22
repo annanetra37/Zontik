@@ -495,6 +495,22 @@ app.get("/api/businesses", async (_req, res) => {
       r.product_photo = resolveImageUrl(r.id, 'product_photo', r.photo_prefix, false);
       delete r.logo_prefix; delete r.photo_prefix;
     });
+
+    // Attach additional product photo URLs to each business
+    const bizIds = rows.map(r => r.id);
+    if (bizIds.length) {
+      const { rows: photos } = await pool.query(
+        "SELECT id, business_id FROM product_photos WHERE business_id = ANY($1::int[]) ORDER BY sort_order, id",
+        [bizIds]
+      );
+      const photosByBiz = {};
+      photos.forEach(p => {
+        if (!photosByBiz[p.business_id]) photosByBiz[p.business_id] = [];
+        photosByBiz[p.business_id].push({ id: p.id, url: `/api/images/${p.business_id}/photos/${p.id}` });
+      });
+      rows.forEach(r => { r.product_photos = photosByBiz[r.id] || []; });
+    }
+
     // Update cache
     businessesCache = rows;
     businessesCacheTime = Date.now();
