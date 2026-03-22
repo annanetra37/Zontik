@@ -111,40 +111,50 @@ function normalizeUrl(url) {
 
 const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "experiences"];
 
-// Helper: save uploaded file to public/uploads and return the public URL path
-const UPLOADS_DIR = path.join(__dirname, "public", "uploads");
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// ── Cloudinary setup ──
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-function saveUploadedFile(file, bizId, fieldName, index) {
-  const ext = path.extname(file.originalname || "").toLowerCase() || mimeToExt(file.mimetype);
+// Helper: upload file buffer to Cloudinary and return the public URL
+async function uploadToCloudinary(file, bizId, fieldName, index) {
   const suffix = index !== undefined ? `_${index}` : "";
-  const filename = `${bizId}_${fieldName}${suffix}_${Date.now()}${ext}`;
-  const filePath = path.join(UPLOADS_DIR, filename);
-  fs.writeFileSync(filePath, file.buffer);
-  return `/uploads/${filename}`;
+  const publicId = `zontik/${bizId}_${fieldName}${suffix}_${Date.now()}`;
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { public_id: publicId, resource_type: "image", overwrite: true },
+      (err, result) => {
+        if (err) return reject(err);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(file.buffer);
+  });
 }
 
-function mimeToExt(mime) {
-  const map = { "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp" };
-  return map[mime] || ".jpg";
-}
-
-// Helper: delete an uploaded file given its public URL path
-function deleteUploadedFile(urlPath) {
-  if (!urlPath || !urlPath.startsWith("/uploads/")) return;
-  const filePath = path.join(__dirname, "public", urlPath);
-  try { fs.unlinkSync(filePath); } catch { /* file may not exist */ }
+// Helper: delete an image from Cloudinary given its public URL
+function deleteFromCloudinary(url) {
+  if (!url || !/^https?:\/\//.test(url)) return;
+  // Don't delete legacy base64 or local paths
+  if (!url.includes("cloudinary.com") && !url.includes("res.cloudinary")) return;
+  // Extract public_id from URL: .../upload/v123/zontik/filename.ext
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/);
+  if (match) {
+    cloudinary.uploader.destroy(match[1], { resource_type: "image" }).catch(() => {});
+  }
 }
 
 // Helper: resolve image field to a public URL for the frontend.
 // For listings we use a prefix (LEFT(col, 512)) to avoid loading full base64 blobs.
-// For single business detail we have the full value.
 function resolveImageUrl(id, field, valueOrPrefix, bustCache) {
   if (!valueOrPrefix) return null;
-  // External URL — return directly
+  // External/Cloudinary URL — return directly
   if (/^https?:\/\//i.test(valueOrPrefix)) return valueOrPrefix;
-  // Local file path (new format) — return directly
-  if (valueOrPrefix.startsWith("/uploads/")) return bustCache ? `${valueOrPrefix}?v=${Date.now()}` : valueOrPrefix;
+  // Local file path (legacy) — return directly
+  if (valueOrPrefix.startsWith("/uploads/")) return valueOrPrefix;
   // base64 data URL (legacy) — serve through our image endpoint
   const url = `/api/images/${id}/${field}`;
   return bustCache ? `${url}?v=${Date.now()}` : url;
@@ -528,9 +538,10 @@ app.get("/api/businesses", async (_req, res) => {
       const photosByBiz = {};
       photos.forEach(p => {
         if (!photosByBiz[p.business_id]) photosByBiz[p.business_id] = [];
-        // Use direct URL for file-based photos, fallback to API endpoint for legacy base64
-        const url = (p.photo_prefix && p.photo_prefix.startsWith("/uploads/"))
-          ? p.photo_prefix
+        // Use direct URL for Cloudinary/external/local, fallback to API endpoint for legacy base64
+        const prefix = p.photo_prefix || "";
+        const url = /^https?:\/\//i.test(prefix) || prefix.startsWith("/uploads/")
+          ? prefix
           : `/api/images/${p.business_id}/photos/${p.id}`;
         photosByBiz[p.business_id].push({ id: p.id, url });
       });
@@ -639,19 +650,19 @@ app.post("/api/businesses", authRequired, upload.fields([
     );
     const newBizId = result.rows[0].id;
 
-    // Save images to disk and store public URL paths in DB
+    // Upload images to Cloudinary and store public URLs in DB
     let logoUrl = null;
     let productPhotoUrl = null;
-    if (req.files?.logo?.[0]) logoUrl = saveUploadedFile(req.files.logo[0], newBizId, "logo");
-    if (req.files?.product_photo?.[0]) productPhotoUrl = saveUploadedFile(req.files.product_photo[0], newBizId, "product_photo");
+    if (req.files?.logo?.[0]) logoUrl = await uploadToCloudinary(req.files.logo[0], newBizId, "logo");
+    if (req.files?.product_photo?.[0]) productPhotoUrl = await uploadToCloudinary(req.files.product_photo[0], newBizId, "product_photo");
     if (logoUrl || productPhotoUrl) {
       await pool.query("UPDATE businesses SET logo = $1, product_photo = $2 WHERE id = $3", [logoUrl, productPhotoUrl, newBizId]);
     }
 
-    // Save additional product photos
+    // Upload additional product photos
     if (req.files?.product_photos?.length) {
       for (let i = 0; i < req.files.product_photos.length; i++) {
-        const photoUrl = saveUploadedFile(req.files.product_photos[i], newBizId, "photo", i);
+        const photoUrl = await uploadToCloudinary(req.files.product_photos[i], newBizId, "photo", i);
         await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [newBizId, photoUrl, i]);
       }
     }
@@ -727,16 +738,16 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   let logoUrl = req.body.keep_logo === "true" ? biz[0].logo : null;
   let productPhotoUrl = req.body.keep_product_photo === "true" ? biz[0].product_photo : null;
   if (req.files?.logo?.[0]) {
-    deleteUploadedFile(biz[0].logo); // clean up old file
-    logoUrl = saveUploadedFile(req.files.logo[0], id, "logo");
+    deleteFromCloudinary(biz[0].logo);
+    logoUrl = await uploadToCloudinary(req.files.logo[0], id, "logo");
   } else if (!logoUrl) {
-    deleteUploadedFile(biz[0].logo);
+    deleteFromCloudinary(biz[0].logo);
   }
   if (req.files?.product_photo?.[0]) {
-    deleteUploadedFile(biz[0].product_photo);
-    productPhotoUrl = saveUploadedFile(req.files.product_photo[0], id, "product_photo");
+    deleteFromCloudinary(biz[0].product_photo);
+    productPhotoUrl = await uploadToCloudinary(req.files.product_photo[0], id, "product_photo");
   } else if (!productPhotoUrl) {
-    deleteUploadedFile(biz[0].product_photo);
+    deleteFromCloudinary(biz[0].product_photo);
   }
 
   try {
@@ -761,11 +772,10 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
       ]
     );
     // Handle additional product photos
-    // Delete photos the user removed (clean up files from disk)
+    // Delete photos the user removed (clean up from Cloudinary)
     const keepPhotoIds = req.body.keep_photo_ids;
     if (keepPhotoIds !== undefined) {
       const idsToKeep = (Array.isArray(keepPhotoIds) ? keepPhotoIds : [keepPhotoIds]).filter(Boolean).map(Number);
-      // Fetch photos to delete so we can clean up files
       let delQuery, delParams;
       if (idsToKeep.length) {
         delQuery = "SELECT id, photo FROM product_photos WHERE business_id = $1 AND id != ALL($2::int[])";
@@ -775,19 +785,19 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
         delParams = [id];
       }
       const { rows: toDelete } = await pool.query(delQuery, delParams);
-      toDelete.forEach(p => deleteUploadedFile(p.photo));
+      toDelete.forEach(p => deleteFromCloudinary(p.photo));
       if (idsToKeep.length) {
         await pool.query("DELETE FROM product_photos WHERE business_id = $1 AND id != ALL($2::int[])", [id, idsToKeep]);
       } else {
         await pool.query("DELETE FROM product_photos WHERE business_id = $1", [id]);
       }
     }
-    // Add new photos
+    // Upload new photos to Cloudinary
     if (req.files?.product_photos?.length) {
       const { rows: maxOrder } = await pool.query("SELECT COALESCE(MAX(sort_order), -1) AS mx FROM product_photos WHERE business_id = $1", [id]);
       let order = (maxOrder[0]?.mx ?? -1) + 1;
       for (let i = 0; i < req.files.product_photos.length; i++) {
-        const photoUrl = saveUploadedFile(req.files.product_photos[i], id, "photo", order);
+        const photoUrl = await uploadToCloudinary(req.files.product_photos[i], id, "photo", order);
         await pool.query("INSERT INTO product_photos (business_id, photo, sort_order) VALUES ($1, $2, $3)", [id, photoUrl, order++]);
       }
     }
@@ -812,11 +822,11 @@ app.delete("/api/businesses/:id", authRequired, async (req, res) => {
     const { rows } = await pool.query("SELECT user_id, logo, product_photo FROM businesses WHERE id = $1", [id]);
     if (!rows.length) return res.status(404).json({ error: "Business not found" });
     if (rows[0].user_id !== req.user.id) return res.status(403).json({ error: "You can only delete your own businesses" });
-    // Clean up uploaded files
-    deleteUploadedFile(rows[0].logo);
-    deleteUploadedFile(rows[0].product_photo);
+    // Clean up from Cloudinary
+    deleteFromCloudinary(rows[0].logo);
+    deleteFromCloudinary(rows[0].product_photo);
     const { rows: photos } = await pool.query("SELECT photo FROM product_photos WHERE business_id = $1", [id]);
-    photos.forEach(p => deleteUploadedFile(p.photo));
+    photos.forEach(p => deleteFromCloudinary(p.photo));
     await pool.query("DELETE FROM reviews WHERE business_id = $1", [id]);
     await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
     console.log(`Business #${id} deleted by user #${req.user.id}`);
@@ -857,9 +867,12 @@ app.get("/api/businesses/:id", async (req, res) => {
       [id]
     );
     b.product_photos = photos.map(p => {
-      const url = (p.photo_prefix && p.photo_prefix.startsWith("/uploads/"))
-        ? `${p.photo_prefix}?v=${Date.now()}`
-        : `/api/images/${id}/photos/${p.id}?v=${Date.now()}`;
+      const prefix = p.photo_prefix || "";
+      const url = /^https?:\/\//i.test(prefix)
+        ? prefix
+        : prefix.startsWith("/uploads/")
+          ? prefix
+          : `/api/images/${id}/photos/${p.id}?v=${Date.now()}`;
       return { id: p.id, url };
     });
 
