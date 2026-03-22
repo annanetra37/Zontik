@@ -296,7 +296,7 @@ nav ul a:hover { color: var(--accent); }
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.slideshow-slide img { width: 100%; height: 100%; object-fit: cover; }
+.slideshow-slide img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
 .slideshow-arrow {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 38px; height: 38px; border-radius: 50%;
@@ -1826,6 +1826,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   // ── Slideshow ──
   let slideshowIndex = 0;
   let slideshowPhotos = [];
+  let slideshowTimer = null;
 
   function initSlideshow(photos) {
     slideshowPhotos = photos;
@@ -1844,7 +1845,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     if (photos.length <= 10) {
       html += '<div class="slideshow-dots" id="slideshowDots">';
       photos.forEach(function(_, i) {
-        html += '<button class="slideshow-dot' + (i === 0 ? ' active' : '') + '" onclick="slideshowGoTo(' + i + ')"></button>';
+        html += '<button class="slideshow-dot' + (i === 0 ? ' active' : '') + '" onclick="slideshowGoTo(' + i + ');slideshowStartAuto()"></button>';
       });
       html += '</div>';
     }
@@ -1856,10 +1857,25 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     banner.innerHTML = html;
     if (closeBtn) banner.appendChild(closeBtn);
     if (logo) banner.appendChild(logo);
+
+    // Start auto-advance
+    slideshowStartAuto();
+  }
+
+  function slideshowStartAuto() {
+    slideshowStopAuto();
+    if (slideshowPhotos.length > 1) {
+      slideshowTimer = setInterval(function() { slideshowGoTo(slideshowIndex + 1); }, 5000);
+    }
+  }
+
+  function slideshowStopAuto() {
+    if (slideshowTimer) { clearInterval(slideshowTimer); slideshowTimer = null; }
   }
 
   function slideshowNav(dir) {
     slideshowGoTo(slideshowIndex + dir);
+    slideshowStartAuto(); // reset auto-advance timer on manual nav
   }
 
   function slideshowGoTo(idx) {
@@ -1883,7 +1899,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     document.addEventListener('touchend', function(e) {
       if (!e.target.closest('.slideshow') || !slideshowPhotos.length) return;
       const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) slideshowNav(diff > 0 ? 1 : -1);
+      if (Math.abs(diff) > 50) { slideshowNav(diff > 0 ? 1 : -1); }
     }, { passive: true });
   })();
 
@@ -2638,6 +2654,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   }
 
   function closeDetailModal() {
+    slideshowStopAuto();
     document.getElementById('detailModal').classList.remove('open');
     document.body.style.overflow = '';
   }
