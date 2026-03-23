@@ -586,13 +586,12 @@ app.post("/api/businesses", authRequired, upload.fields([
   if (!description?.trim()) missing.push("description");
   if (!website?.trim()) missing.push("website");
   if (!city?.trim()) missing.push("city");
-  if (!contact_email?.trim()) missing.push("contact_email");
   if (missing.length) {
     return res.status(400).json({ error: `Missing required fields: ${missing.join(", ")}` });
   }
 
-  // Basic email format check
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email.trim())) {
+  // Basic email format check (only if provided)
+  if (contact_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email.trim())) {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
@@ -638,7 +637,7 @@ app.post("/api/businesses", authRequired, upload.fields([
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
         city.trim(), (country || "").trim(), address?.trim() || null,
-        contact_email.trim(), contact_phone?.trim() || null,
+        contact_email?.trim() || null, contact_phone?.trim() || null,
         price_range || "€",
         tagArray, emoji || "🏪",
         year_founded ? parseInt(year_founded, 10) : null,
@@ -712,8 +711,11 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
   if (!description?.trim()) missing.push("description");
   if (!website?.trim()) missing.push("website");
   if (!city?.trim()) missing.push("city");
-  if (!contact_email?.trim()) missing.push("contact_email");
   if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(", ")}` });
+
+  if (contact_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email.trim())) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
 
   website = normalizeUrl(website);
   if (isSocialMediaUrl(website)) {
@@ -762,7 +764,7 @@ app.put("/api/businesses/:id", authRequired, upload.fields([
       [
         name.trim(), category.trim(), description.trim(), website, websiteDomain,
         city.trim(), (country || "").trim(), address?.trim() || null,
-        contact_email.trim(), contact_phone?.trim() || null,
+        contact_email?.trim() || null, contact_phone?.trim() || null,
         price_range || "€", tagArray, emoji || "🏪",
         year_founded ? parseInt(year_founded, 10) : null,
         owner_name?.trim() || null, short_tagline?.trim() || null,
