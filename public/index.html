@@ -582,10 +582,11 @@ nav ul a:hover { color: var(--accent); }
   font-size: 0.8rem; color: var(--ink-soft); font-weight: 600;
 }
 .btn-reset-filters {
-  font-size: 0.78rem; color: var(--accent); background: var(--accent-soft);
-  border: 1px solid var(--accent); border-radius: 6px; padding: 0.3rem 0.7rem;
+  font-size: 0.8rem; color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent); border-radius: 8px; padding: 0.45rem 0.8rem;
   cursor: pointer; font-weight: 600; transition: all 0.2s;
-  display: none; align-items: center; gap: 0.3rem;
+  display: none; align-items: center; gap: 0.35rem; width: 100%;
+  justify-content: center; margin-bottom: 0.5rem;
 }
 .btn-reset-filters:hover { background: var(--accent); color: #fff; }
 .btn-reset-filters.visible { display: inline-flex; }
@@ -1304,6 +1305,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
 <div class="page-body">
   <!-- SIDEBAR (built dynamically from JS) -->
   <aside class="sidebar" id="sidebarContainer">
+    <button class="btn-reset-filters" id="resetFilters" onclick="resetAllFilters()">&#x2715; Reset Filters</button>
     <div class="sidebar-section" id="sidebarCategories">
       <div class="sidebar-heading">Category</div>
       <button class="sidebar-item active" onclick="setFilter('all',this)"><span class="si-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> All Businesses<span class="si-count" id="catCountAll"></span></button>
@@ -1345,7 +1347,6 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     <div class="section-header">
       <h2 class="section-title" id="sectionTitle">All Businesses</h2>
       <span class="section-count" id="countLabel">Showing 0 businesses</span>
-      <button class="btn-reset-filters" id="resetFilters" onclick="resetAllFilters()">&#x2715; Reset Filters</button>
     </div>
     <div class="grid" id="cardGrid">
     <!-- Loading skeleton shown while data loads -->
