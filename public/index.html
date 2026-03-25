@@ -2425,6 +2425,9 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       });
       buildSidebar(businesses);
       filterCards();
+      // Check if URL contains a business slug to open on load
+      var pathSlug = window.location.pathname.replace(/^\//, '');
+      if (pathSlug) openBusinessBySlug(pathSlug);
     } catch { /* DB might not be configured yet */ }
   }
 
@@ -2825,9 +2828,42 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   }
 
   // ── Detail Modal ──
-  function openDetailModal(bizId) {
+  function bizNameToSlug(name) {
+    return name.trim().split(/\s+/).map(function(w, i) {
+      w = w.replace(/[^a-zA-Z0-9]/g, '');
+      if (!w) return '';
+      return i === 0 ? w.charAt(0).toLowerCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1);
+    }).join('');
+  }
+
+  function openBusinessBySlug(slug) {
+    if (!slug || !allBusinesses.length) return false;
+    var lower = slug.toLowerCase();
+    var biz = allBusinesses.find(function(b) { return bizNameToSlug(b.name).toLowerCase() === lower; });
+    if (biz) { openDetailModal(biz.id, true); return true; }
+    return false;
+  }
+
+  window.addEventListener('popstate', function() {
+    var path = window.location.pathname.replace(/^\//, '');
+    if (path) {
+      openBusinessBySlug(path);
+    } else {
+      slideshowStopAuto();
+      document.getElementById('detailModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  function openDetailModal(bizId, skipPush) {
     const b = allBusinesses.find(x => x.id === bizId);
     if (!b) return;
+
+    // Update URL with business slug
+    if (!skipPush) {
+      var slug = bizNameToSlug(b.name);
+      history.pushState({ bizId: b.id }, '', '/' + slug);
+    }
     const banner = document.getElementById('detailBanner');
     const body = document.getElementById('detailBody');
 
@@ -2904,6 +2940,8 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     slideshowStopAuto();
     document.getElementById('detailModal').classList.remove('open');
     document.body.style.overflow = '';
+    // Restore base URL
+    if (window.location.pathname !== '/') history.pushState(null, '', '/');
   }
   document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
 
