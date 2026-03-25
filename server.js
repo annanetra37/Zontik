@@ -109,7 +109,7 @@ function normalizeUrl(url) {
   return url;
 }
 
-const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "experiences", "home", "entertainment", "toys"];
+const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "home", "toys"];
 
 // ── Cloudinary setup ──
 const cloudinary = require("cloudinary").v2;
