@@ -828,8 +828,17 @@ nav ul a:hover { color: var(--accent); }
 .star-input button.lit { color: #f5a623; }
 .review-list {
   display: flex; flex-direction: column; gap: 0.75rem;
-  margin-top: 1.25rem; padding-top: 1rem;
-  border-top: 1px solid var(--border); max-height: 300px; overflow-y: auto;
+  max-height: 50vh; overflow-y: auto;
+}
+.review-write-toggle {
+  display: block; width: 100%; text-align: center; padding: 0.7rem 1rem;
+  margin-top: 1rem; font-size: 0.92rem; font-weight: 700; color: var(--accent);
+  background: none; border: 1.5px dashed var(--accent); border-radius: 0.75rem;
+  cursor: pointer; font-family: inherit; transition: background 0.2s, color 0.2s;
+}
+.review-write-toggle:hover { background: var(--accent); color: #fff; }
+.review-form-wrap {
+  margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);
 }
 .review-item {
   background: var(--bg); border: 1px solid var(--border);
@@ -1629,17 +1638,20 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       <button class="modal-close" onclick="closeReviewModal()">&times;</button>
     </div>
     <div class="review-modal-body">
-      <div class="form-error-banner" id="reviewError"></div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Your Name <span class="req">*</span></label><input type="text" id="r_name" placeholder="e.g. Anna M." maxlength="100" /></div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Rating <span class="req">*</span></label>
-        <div class="star-input" id="starInput">
-          <button type="button" onclick="setStarRating(1)">&#9733;</button><button type="button" onclick="setStarRating(2)">&#9733;</button><button type="button" onclick="setStarRating(3)">&#9733;</button><button type="button" onclick="setStarRating(4)">&#9733;</button><button type="button" onclick="setStarRating(5)">&#9733;</button>
-        </div>
-      </div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Comment</label><textarea id="r_comment" placeholder="Share your experience..." maxlength="1000" style="min-height:60px"></textarea></div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Photo (optional)</label><input type="file" id="r_photo" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:0.85rem" /><span class="form-hint">Max 5MB — JPEG, PNG, GIF, or WebP</span></div>
-      <button class="btn-submit" id="btnReview" onclick="submitReview()" style="width:100%">Submit Review</button>
       <div class="review-list" id="reviewList"><div class="review-empty">Loading reviews...</div></div>
+      <div class="review-write-toggle" id="reviewWriteToggle" onclick="toggleReviewForm()">&#9997;&#65039; Leave your review</div>
+      <div class="review-form-wrap" id="reviewFormWrap" style="display:none">
+        <div class="form-error-banner" id="reviewError"></div>
+        <div class="form-group" style="margin-bottom:0.75rem"><label>Your Name <span class="req">*</span></label><input type="text" id="r_name" placeholder="e.g. Anna M." maxlength="100" /></div>
+        <div class="form-group" style="margin-bottom:0.75rem"><label>Rating <span class="req">*</span></label>
+          <div class="star-input" id="starInput">
+            <button type="button" onclick="setStarRating(1)">&#9733;</button><button type="button" onclick="setStarRating(2)">&#9733;</button><button type="button" onclick="setStarRating(3)">&#9733;</button><button type="button" onclick="setStarRating(4)">&#9733;</button><button type="button" onclick="setStarRating(5)">&#9733;</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem"><label>Comment</label><textarea id="r_comment" placeholder="Share your experience..." maxlength="1000" style="min-height:60px"></textarea></div>
+        <div class="form-group" style="margin-bottom:0.75rem"><label>Photo (optional)</label><input type="file" id="r_photo" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:0.85rem" /><span class="form-hint">Max 5MB — JPEG, PNG, GIF, or WebP</span></div>
+        <button class="btn-submit" id="btnReview" onclick="submitReview()" style="width:100%">Submit Review</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2460,8 +2472,15 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     document.getElementById('r_name').value = ''; document.getElementById('r_comment').value = '';
     document.getElementById('reviewError').style.display = 'none'; document.getElementById('r_photo').value = '';
     document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
+    document.getElementById('reviewFormWrap').style.display = 'none';
+    document.getElementById('reviewWriteToggle').style.display = 'block';
     document.getElementById('reviewOverlay').classList.add('open');
     document.body.style.overflow = 'hidden'; loadReviews(bizId);
+  }
+  function toggleReviewForm() {
+    document.getElementById('reviewFormWrap').style.display = 'block';
+    document.getElementById('reviewWriteToggle').style.display = 'none';
+    document.getElementById('r_name').focus();
   }
   function closeReviewModal() {
     document.getElementById('reviewOverlay').classList.remove('open');
@@ -2511,6 +2530,8 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
         document.getElementById('r_name').value = ''; document.getElementById('r_comment').value = '';
         photoInput.value = ''; selectedRating = 0;
         document.querySelectorAll('#starInput button').forEach(b => b.classList.remove('lit'));
+        document.getElementById('reviewFormWrap').style.display = 'none';
+        document.getElementById('reviewWriteToggle').style.display = 'block';
         loadReviews(currentReviewBizId);
       }
     } catch { errBanner.textContent = 'Network error — please try again'; errBanner.style.display = 'block'; }
