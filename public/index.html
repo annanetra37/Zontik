@@ -1669,7 +1669,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
         <div class="form-group" style="margin-bottom:0.75rem"><label>Your Name <span class="req">*</span></label><input type="text" id="a_name" placeholder="e.g. Anna Mueller" maxlength="200" /></div>
       </div>
       <div class="form-group" style="margin-bottom:0.75rem"><label>Email <span class="req">*</span></label><input type="email" id="a_email" placeholder="you@example.com" maxlength="254" /></div>
-      <div class="form-group" style="margin-bottom:0.75rem"><label>Password <span class="req">*</span></label><div class="password-wrap"><input type="password" id="a_password" placeholder="Min. 6 characters" /><button type="button" class="pw-toggle" onclick="togglePassword()" id="pwToggleBtn" title="Show password">👁</button></div></div>
+      <div class="form-group" style="margin-bottom:0.75rem"><label>Password <span class="req">*</span></label><div class="password-wrap"><input type="password" id="a_password" placeholder="Min. 8 characters" /><button type="button" class="pw-toggle" onclick="togglePassword()" id="pwToggleBtn" title="Show password">👁</button></div></div>
       <div id="authForgotRow" style="text-align:right;margin:-0.3rem 0 0.75rem;font-size:0.82rem"><a href="#" onclick="openForgotPassword();return false" style="color:var(--accent);font-weight:600">Forgot password?</a></div>
       <button class="btn-submit" id="btnAuth" onclick="submitAuth()" style="width:100%">Log in</button>
       <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--ink-soft)">
@@ -2414,6 +2414,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
   }
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function safeUrl(url) { try { var p = new URL(url); return (p.protocol === 'https:' || p.protocol === 'http:') ? esc(url) : '#'; } catch { return '#'; } }
 
   // ── Card mini-slideshow (manual only) ──
   function cardSlide(btn, dir) {
@@ -2884,10 +2885,10 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
     const tags = (b.tags || []).map(t => '<span class="detail-tag">' + esc(t) + '</span>').join('');
 
     const socials = [];
-    if (b.instagram) socials.push('<a class="detail-social" href="' + esc(b.instagram) + '" target="_blank" rel="noopener">Instagram</a>');
-    if (b.facebook) socials.push('<a class="detail-social" href="' + esc(b.facebook) + '" target="_blank" rel="noopener">Facebook</a>');
-    if (b.linkedin) socials.push('<a class="detail-social" href="' + esc(b.linkedin) + '" target="_blank" rel="noopener">LinkedIn</a>');
-    if (b.tiktok) socials.push('<a class="detail-social" href="' + esc(b.tiktok) + '" target="_blank" rel="noopener">TikTok</a>');
+    if (b.instagram) socials.push('<a class="detail-social" href="' + safeUrl(b.instagram) + '" target="_blank" rel="noopener noreferrer">Instagram</a>');
+    if (b.facebook) socials.push('<a class="detail-social" href="' + safeUrl(b.facebook) + '" target="_blank" rel="noopener noreferrer">Facebook</a>');
+    if (b.linkedin) socials.push('<a class="detail-social" href="' + safeUrl(b.linkedin) + '" target="_blank" rel="noopener noreferrer">LinkedIn</a>');
+    if (b.tiktok) socials.push('<a class="detail-social" href="' + safeUrl(b.tiktok) + '" target="_blank" rel="noopener noreferrer">TikTok</a>');
 
     let meta = '<div class="detail-meta">';
     meta += '<div class="detail-meta-item"><span class="detail-meta-icon">📍</span> ' + esc(b.city) + ', ' + esc(b.country) + '</div>';
@@ -2908,7 +2909,7 @@ nav.mobile-open .mobile-menu-btn span:nth-child(3) { transform: translateY(-7.5p
       (tags ? '<div class="detail-tags">' + tags + '</div>' : '') +
       (socials.length ? '<div class="detail-socials">' + socials.join('') + '</div>' : '') +
       '<div class="detail-actions">' +
-        '<a class="detail-visit" href="' + esc(b.website) + '" target="_blank" rel="noopener">Visit Website →</a>' +
+        '<a class="detail-visit" href="' + safeUrl(b.website) + '" target="_blank" rel="noopener noreferrer">Visit Website →</a>' +
         '<button class="detail-review-btn" onclick="closeDetailModal();openReviewModal(' + b.id + ', \'' + esc(b.name).replace(/'/g, "\\'") + '\')">Write Review</button>' +
         ((authUser && b.user_id === authUser.id) ? '<button class="detail-review-btn" onclick="closeDetailModal();openEditModal(' + b.id + ')">Edit Listing</button><button class="detail-review-btn" style="background:#fff0f0;color:#d9363e" onclick="deleteBusiness(' + b.id + ')">Delete</button>' : '') +
         ((authUser && authUser.is_admin) ? '<button class="detail-review-btn" id="adminFeaturedBtn" style="background:' + (b.featured ? 'var(--lemon);color:#705000;border:1.5px solid #f0d060' : 'var(--accent-soft);color:var(--accent)') + '" onclick="toggleFeatured(' + b.id + ',' + !b.featured + ')">' + (b.featured ? '★ Unfeature' : '☆ Feature') + '</button>' : '') +

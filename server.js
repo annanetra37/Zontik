@@ -8,8 +8,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const { Resend } = require("resend");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const JWT_SECRET = process.env.JWT_SECRET || "zontik-secret-change-in-prod";
+if (!process.env.JWT_SECRET) {
+  console.warn("⚠ WARNING: JWT_SECRET not set — using insecure default. Set JWT_SECRET in production!");
+}
 
 // ── Email setup ──
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -48,8 +53,49 @@ const upload = multer({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Parse JSON bodies
-app.use(express.json());
+// ── Security headers ──
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+      connectSrc: ["'self'", "https://www.google-analytics.com", "https://*.analytics.google.com", "https://*.google-analytics.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// ── Rate limiters ──
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later" },
+});
+app.use(globalLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts, please try again in 15 minutes" },
+});
+
+const submitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many submissions, please try again later" },
+});
+
+// Parse JSON bodies with size limit
+app.use(express.json({ limit: "1mb" }));
 
 // ── Request logging middleware ──
 app.use((req, res, next) => {
@@ -107,6 +153,17 @@ function normalizeUrl(url) {
     url = "https://" + url;
   }
   return url;
+}
+
+// Validate URL protocol (reject javascript:, data:, etc.)
+function isSafeUrl(url) {
+  if (!url || !url.trim()) return true; // empty is ok (optional field)
+  try {
+    const p = new URL(url.trim().startsWith("http") ? url.trim() : "https://" + url.trim());
+    return p.protocol === "https:" || p.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
 
 const VALID_CATEGORIES = ["food", "tech", "craft", "health", "fashion", "education", "travel", "home", "toys"];
@@ -265,7 +322,7 @@ async function adminRequired(req, res, next) {
 }
 
 // ── Auth: Register ──
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", authLimiter, async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
 
@@ -273,8 +330,8 @@ app.post("/api/auth/register", async (req, res) => {
   if (!email?.trim() || !password || !name?.trim()) {
     return res.status(400).json({ error: "Name, email, and password are required" });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ error: "Invalid email address" });
@@ -332,7 +389,7 @@ app.get("/api/auth/verify", async (req, res) => {
 });
 
 // ── Auth: Resend verification email ──
-app.post("/api/auth/resend-verification", async (req, res) => {
+app.post("/api/auth/resend-verification", authLimiter, async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
   const { email } = req.body;
@@ -366,7 +423,7 @@ app.post("/api/auth/resend-verification", async (req, res) => {
 });
 
 // ── Auth: Forgot password ──
-app.post("/api/auth/forgot-password", async (req, res) => {
+app.post("/api/auth/forgot-password", authLimiter, async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
   const { email } = req.body;
@@ -399,12 +456,12 @@ app.post("/api/auth/forgot-password", async (req, res) => {
 });
 
 // ── Auth: Reset password ──
-app.post("/api/auth/reset-password", async (req, res) => {
+app.post("/api/auth/reset-password", authLimiter, async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: "Token and new password are required" });
-  if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+  if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
   try {
     const { rows } = await pool.query(
       "SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()",
@@ -421,7 +478,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
 });
 
 // ── Auth: Login ──
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", authLimiter, async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database not available" });
 
@@ -443,7 +500,7 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const isAdmin = !!user.is_admin;
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, is_admin: isAdmin }, JWT_SECRET, { expiresIn: "30d" });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, is_admin: isAdmin }, JWT_SECRET, { expiresIn: "7d" });
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin } });
   } catch (err) {
     console.error("Login error:", err.message);
@@ -559,7 +616,7 @@ app.get("/api/businesses", async (_req, res) => {
 });
 
 // ── API: Submit a new business listing (auth required, with image uploads) ──
-app.post("/api/businesses", authRequired, upload.fields([
+app.post("/api/businesses", authRequired, submitLimiter, upload.fields([
   { name: "logo", maxCount: 1 },
   { name: "product_photo", maxCount: 1 },
   { name: "product_photos", maxCount: 10 },
@@ -607,6 +664,14 @@ app.post("/api/businesses", authRequired, upload.fields([
 
   if (!VALID_CATEGORIES.includes(category)) {
     return res.status(400).json({ error: `Category must be one of: ${VALID_CATEGORIES.join(", ")}` });
+  }
+
+  // Validate all URL fields
+  const urlFields = { instagram, facebook, linkedin, tiktok };
+  for (const [field, val] of Object.entries(urlFields)) {
+    if (val && !isSafeUrl(val)) {
+      return res.status(400).json({ error: `Invalid URL for ${field}` });
+    }
   }
 
   const tagArray = Array.isArray(tags)
@@ -968,7 +1033,7 @@ app.get("/api/businesses/:id/reviews", async (req, res) => {
 });
 
 // ── API: Submit a review (with optional photo) ──
-app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res) => {
+app.post("/api/businesses/:id/reviews", submitLimiter, upload.single("photo"), async (req, res) => {
   const pool = getPool();
   if (!pool) return res.status(503).json({ error: "Database is not available. Please try again later." });
 
@@ -987,7 +1052,10 @@ app.post("/api/businesses/:id/reviews", upload.single("photo"), async (req, res)
 
   // Save uploaded photo as base64 in DB
   let photoData = null;
-  if (req.file) photoData = fileToBase64(req.file);
+  if (req.file) {
+    const mime = req.file.mimetype;
+    photoData = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
+  }
 
   try {
     const { rows } = await pool.query(

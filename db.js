@@ -4,7 +4,12 @@ let pool = null;
 
 function getPool() {
   if (!pool && process.env.DATABASE_URL) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const opts = { connectionString: process.env.DATABASE_URL };
+    // Enable SSL for production database connections
+    if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost") && !process.env.DATABASE_URL.includes("127.0.0.1")) {
+      opts.ssl = { rejectUnauthorized: false };
+    }
+    pool = new Pool(opts);
     pool.on("error", (err) => {
       console.error("Unexpected PostgreSQL error:", err);
     });
