@@ -12,6 +12,8 @@
     "cloudinary": "^2.9.0",
     "dotenv": "^17.3.1",
     "express": "^4.21.0",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
